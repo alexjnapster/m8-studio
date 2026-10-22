@@ -2,7 +2,7 @@
 
 Нативний застосунок у смузі меню macOS для керування екранами Samsung. Українська за замовчуванням; English доступна в налаштуваннях.
 
-A native SwiftUI/AppKit menu-bar utility for Samsung displays. Built for Apple silicon and macOS 14 or later. Version 2.1.0 is a development release, signed locally without Developer ID notarization.
+A native SwiftUI/AppKit menu-bar utility for Samsung displays. Built for Apple silicon and macOS 14 or later. The published beta is 2.1.0. Current working source targets the v5 roadmap and is a development build, signed locally without Developer ID notarization.
 
 ## Features
 
@@ -61,3 +61,7 @@ No analytics or cloud account is required. Local network traffic controls the se
 The bundled [m1ddc](https://github.com/waydabber/m1ddc) helper is MIT-licensed; its license is included in ThirdParty. DDC reply validation has local changes. Media key event-format and dedicated brightness-key handling were studied from [MediaKeyTap](https://github.com/nhurden/MediaKeyTap), with MIT attribution in Resources/Licenses. [MonitorControl](https://github.com/MonitorControl/MonitorControl), [Lunar](https://github.com/alin23/Lunar), and [HotKey](https://github.com/soffes/HotKey) informed routing, recovery and shortcut research; their implementations are not bundled. Samsung model families were checked against [Samsung's Smart Monitor range](https://www.samsung.com/uk/monitors/smart-monitor/).
 
 This is an independent project, not affiliated with Samsung or Apple. App code is MIT-licensed; third-party notices remain applicable.
+
+## Current development increment
+
+Desktop controls (menu → More actions → Desktop controls), a HiDPI scaling explorer with render-buffer dimensions and safe preview, panel-scoped imported ICC profiles, explicit Samsung audio routing and immersive-playback setup guidance are in development. See [driver findings](SAMSUNG-DRIVER-FINDINGS.md) and [v5 roadmap](ROADMAP.md) for evidence and remaining work. These additions do not claim measured calibration, automatic Atmos activation or native WidgetKit gallery registration.
