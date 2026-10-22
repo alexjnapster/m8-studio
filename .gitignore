@@ -1,0 +1,20 @@
+# Generated apps and compiler output
+*.app/
+*.zip
+.DS_Store
+ThirdParty/.objects/
+ThirdParty/m1ddc
+ThirdParty/library/
+# Device-specific material stays on the user's Mac
+Resources/Profiles/
+Research/
+Tests/*.txt
+Tests/*.json
+Tests/*.png
+Tests/*.jpg
+README.txt
+Diagnostics/
+*.log
+.env*
+Tests/Previews/
+Tests/QuickPreviews/
