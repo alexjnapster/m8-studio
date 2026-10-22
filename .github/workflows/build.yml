@@ -21,8 +21,12 @@ jobs:
         run: zsh build.sh
       - name: Verify bundle
         run: codesign --verify --deep --strict "M8 Studio.app"
+      - name: Stage distribution archive
+        run: |
+          mkdir -p artifacts
+          cp "../M8 Studio.zip" artifacts/M8-Studio-arm64.zip
       - uses: actions/upload-artifact@v7
         with:
           name: M8-Studio-arm64-development
-          path: ../M8 Studio.zip
+          path: artifacts/M8-Studio-arm64.zip
           if-no-files-found: error
