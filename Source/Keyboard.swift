@@ -38,6 +38,8 @@ struct MediaKeyOwnership {
     @Published var shortcutStatus = ""
     @Published private(set) var mediaStatus = "Media keys are disabled"
     @Published private(set) var lastInput = ""
+    @Published private(set) var lastMediaInput = ""
+    private var activationObserver: NSObjectProtocol?
     private var ownership = MediaKeyOwnership()
     var onCommand: ((DeskCommand, Bool) -> Void)?
     var shouldHandle: ((DeskCommand) -> Bool)?
@@ -46,7 +48,10 @@ struct MediaKeyOwnership {
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
     private var permissionTimer: Timer?
-    init() { registerShortcuts(); refreshPermission(); updatePermissionTimer() }
+    init() {
+        registerShortcuts(); refreshPermission(); updatePermissionTimer()
+        activationObserver = NotificationCenter.default.addObserver(forName:NSApplication.didBecomeActiveNotification,object:nil,queue:.main) { [weak self] _ in Task { @MainActor in self?.refreshPermission() } }
+    }
     private func updatePermissionTimer() {
         permissionTimer?.invalidate(); permissionTimer = nil
         guard mediaEnabled else { return }
@@ -87,13 +92,13 @@ struct MediaKeyOwnership {
     func disableMedia() { mediaEnabled = false; UserDefaults.standard.set(false, forKey: "mediaKeys"); stopTap(); mediaStatus = "Media keys are disabled"; updatePermissionTimer() }
     func refreshPermission() {
         guard mediaEnabled else { return }
-        guard AXIsProcessTrusted() else { stopTap(); if mediaStatus != "Allow M8 Studio in Accessibility to use media keys" { mediaStatus = "Allow M8 Studio in Accessibility to use media keys" }; return }
-        guard tap == nil else { return }
+        if let tap, !CFMachPortIsValid(tap) { stopTap() }
+        if let tap { if !CGEvent.tapIsEnabled(tap:tap) { CGEvent.tapEnable(tap:tap,enable:true) }; return }
         let callback: CGEventTapCallBack = { _, type, event, context in
             guard let context else { return Unmanaged.passUnretained(event) }
             let controller = Unmanaged<DeskKeyboard>.fromOpaque(context).takeUnretainedValue()
             if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-                MainActor.assumeIsolated { if let tap = controller.tap { CGEvent.tapEnable(tap: tap, enable: true) } }
+                MainActor.assumeIsolated { if let tap = controller.tap { controller.ownership.reset(); CGEvent.tapEnable(tap: tap, enable: true) } }
                 return Unmanaged.passUnretained(event)
             }
             guard let ns = NSEvent(cgEvent: event) else { return Unmanaged.passUnretained(event) }
@@ -107,6 +112,7 @@ struct MediaKeyOwnership {
             } else { return Unmanaged.passUnretained(event) }
             guard let (command, pressed) = decoded else { return Unmanaged.passUnretained(event) }
             return MainActor.assumeIsolated {
+                if pressed && controller.lastMediaInput != command.shortcut { controller.lastMediaInput = command.shortcut }
                 let allowed = ns.modifierFlags.intersection([.command, .control]).isEmpty && controller.shouldHandle?(command) == true
                 let decision = controller.ownership.handle(identity: identity, command: command, pressed: pressed, allowed: allowed)
                 if decision.deliver { controller.deliver(command, fine: ns.modifierFlags.contains(.option)) }
@@ -115,7 +121,10 @@ struct MediaKeyOwnership {
         }
         tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: (CGEventMask(1) << 14) | (CGEventMask(1) << CGEventType.keyDown.rawValue) | (CGEventMask(1) << CGEventType.keyUp.rawValue), callback: callback, userInfo: Unmanaged.passUnretained(self).toOpaque())
         if let tap, let source = CFMachPortCreateRunLoopSource(nil, tap, 0) { self.source = source; CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes); CGEvent.tapEnable(tap: tap, enable: true); mediaActive = true; mediaStatus = "Media keys are active" }
-        else { stopTap(); mediaStatus = "Media-key access failed. Re-enable M8 Studio in Accessibility." }
+        else {
+            stopTap()
+            mediaStatus = AXIsProcessTrusted() ? "macOS refused the media-key connection. Quit and reopen Studio after granting access.":"macOS has not granted this installed build access. Remove the old M8 Studio permission entry and add /Applications/M8 Studio.app again."
+        }
     }
     private func stopTap() { if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }; if let tap { CFMachPortInvalidate(tap) }; source = nil; tap = nil; if mediaActive { mediaActive = false }; ownership.reset() }
 }

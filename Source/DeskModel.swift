@@ -7,10 +7,11 @@ import Darwin
 
 struct ModeChoice: Codable, Equatable {
     var width: Int; var height: Int; var pixels: Int; var hz: Int
-    init(_ mode: CGDisplayMode) { width = mode.width; height = mode.height; pixels = mode.pixelWidth; hz = Int(mode.refreshRate.rounded()) }
-    func matches(_ mode: CGDisplayMode) -> Bool { self == ModeChoice(mode) }
-    var valid: Bool { (320...16384).contains(width) && (200...16384).contains(height) && (width...32768).contains(pixels) && (24...240).contains(hz) }
-    var label: String { LF("%@ × %@%@ · %@ Hz",[String(width),String(height),pixels > width ? " HiDPI":"",String(hz)]) }
+    var milliHz:Int? = nil
+    init(_ mode: CGDisplayMode) { width = mode.width; height = mode.height; pixels = mode.pixelWidth; hz = Int(mode.refreshRate.rounded()); milliHz = Int((mode.refreshRate*1000).rounded()) }
+    func matches(_ mode: CGDisplayMode) -> Bool { width == mode.width && height == mode.height && pixels == mode.pixelWidth && (milliHz.map { abs($0 - Int((mode.refreshRate*1000).rounded())) <= 1 } ?? (hz == Int(mode.refreshRate.rounded()))) }
+    var valid: Bool { (320...16384).contains(width) && (200...16384).contains(height) && (width...32768).contains(pixels) && (24...240).contains(hz) && (milliHz.map { (24000...240000).contains($0) } ?? true) }
+    var label: String { LF("%@ × %@%@ · %@ Hz",[String(width),String(height),pixels > width ? " HiDPI":"",refreshLabel(milliHz.map { Double($0)/1000 } ?? Double(hz))]) }
 }
 struct DeskScene: Identifiable, Codable, Equatable {
     var builtInName: String? = nil
@@ -53,6 +54,11 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
     @Published var appearance = UserDefaults.standard.string(forKey: "appearance") ?? "System"
     @Published var compactLabels = UserDefaults.standard.bool(forKey: "compactLabels")
     var onOpenStudio: (() -> Void)?
+    var onToggleDesktopCard: (() -> Void)?
+    var monitorAtmosMenuConfirmed:Bool {
+        get { hardware.current.map { UserDefaults.standard.bool(forKey:"atmosMenuConfirmed." + $0.uuid) } ?? false }
+        set { guard let display = hardware.current else { return }; objectWillChange.send(); UserDefaults.standard.set(newValue,forKey:"atmosMenuConfirmed." + display.uuid) }
+    }
     var onOSD: ((String, String, Double?) -> Void)?
     private var subscriptions = Set<AnyCancellable>()
     private var toastTask: Task<Void,Never>?
@@ -67,6 +73,7 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
     private var volumeTarget: Double?
     private var volumeWorker: Task<Void,Never>?
     private var lastRefresh = Date.distantPast
+    private var lastMediaConnect = Date.distantPast
     private var identifying: [NSWindow] = []
     private var brightnessLibrary: UnsafeMutableRawPointer?
     typealias ReadBrightness = @convention(c) (UInt32, UnsafeMutablePointer<Float>) -> Int32
@@ -87,6 +94,9 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
         brightnessLibrary = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY)
         if let brightnessLibrary, let symbol = dlsym(brightnessLibrary, "DisplayServicesGetBrightness") { readBrightness = unsafeBitCast(symbol, to: ReadBrightness.self) }
         remote.isAudioActive = { [weak self] in self?.samsungIsOutput ?? false }
+        Publishers.CombineLatest(hardware.$audio,hardware.$output)
+            .debounce(for:.milliseconds(350),scheduler:RunLoop.main)
+            .sink { [weak self] _ in self?.connectVolumeIfNeeded() }.store(in:&subscriptions)
         configurePolling()
         if scenes.isEmpty { seedScenes() }
         if !UserDefaults.standard.bool(forKey:"localizedSceneMigration") {
@@ -95,12 +105,31 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
             persistScenes(); UserDefaults.standard.set(true,forKey:"localizedSceneMigration")
         }
     }
+    private func connectVolumeIfNeeded() {
+        guard !CommandLine.arguments.contains(where:{$0.hasPrefix("--validate") || $0 == "--diagnose"}),
+              samsungIsOutput, !remote.mediaAvailable, !remote.busy, !remote.connected,
+              localHost(remote.host), Date().timeIntervalSince(lastMediaConnect) > 20 else { return }
+        lastMediaConnect = Date(); remote.connect(remoteControl:false)
+    }
     var displayName: String { guard let d = hardware.current else { return "Your display" }; return UserDefaults.standard.string(forKey: "name.\(d.uuid)") ?? (isM8 ? "Samsung M8" : d.name) }
+    var boundAudioUID: String? { UserDefaults.standard.string(forKey:"audioBinding.\(remote.host)") }
+    var samsungAudioCandidates: [AudioInfo] { hardware.audio.filter(\.isSamsungDisplay) }
     var samsungIsOutput: Bool {
         let active = property(AudioObjectID(kAudioObjectSystemObject),kAudioHardwarePropertyDefaultOutputDevice,fallback:AudioDeviceID(0))
-        return hardware.audio.first(where:{$0.id == active})?.name.uppercased().contains("SAMSUNG") == true
+        return monitorAudioRouteMatches(candidates:samsungAudioCandidates.map(\.uid),active:hardware.audio.first(where:{$0.id == active})?.uid,binding:boundAudioUID)
     }
-    var isM8: Bool { hardware.current.map { CGDisplayVendorNumber($0.id) == 19501 && CGDisplayModelNumber($0.id) == 29287 } ?? false }
+    func bindMonitorAudio(_ uid: String) {
+        guard uid.isEmpty || samsungAudioCandidates.contains(where:{$0.uid == uid}) else { return }
+        UserDefaults.standard.set(uid.isEmpty ? nil:uid,forKey:"audioBinding.\(remote.host)")
+        objectWillChange.send(); announce("Monitor audio link updated")
+    }
+    var keyboardRouteHint: String {
+        if samsungAudioCandidates.count > 1 && boundAudioUID == nil { return "Link this monitor’s sound output in Sound before using volume keys." }
+        if !samsungIsOutput { return "Volume keys keep normal Mac behavior until this monitor’s audio output is selected." }
+        if !remote.mediaAvailable { return "Connect the monitor’s volume service to use its volume keys." }
+        return "Volume keys control the linked monitor. Brightness keys control the selected external display."
+    }
+    var isM8: Bool { hardware.current.map { SamsungDriverIdentity.match(vendor:CGDisplayVendorNumber($0.id),product:CGDisplayModelNumber($0.id))?.family == "M80B" } ?? false }
     var panelDescription:String { isM8 ? "4K panel · 60 Hz" : hardware.current?.builtIn == true ? "Built-in Retina display" : "Connected display" }
     var activeModes: [CGDisplayMode] {
         guard let display = hardware.current else { return [] }

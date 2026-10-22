@@ -11,6 +11,7 @@ import AppKit
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     var dashboard:NSWindow?
     var statusController:DeskStatusController?
+    var desktopController:DesktopCardController?
     let osd = DeskOSD()
     func applicationDidFinishLaunching(_ notification:Notification) {
         UserDefaults.standard.register(defaults:["AppleLanguages":[AppLanguage.current,AppLanguage.current == "uk" ? "en":"uk"]])
@@ -24,16 +25,27 @@ import AppKit
         if let index = CommandLine.arguments.firstIndex(of:"--validate"), CommandLine.arguments.count > index+1 { Task { await runValidation(to:CommandLine.arguments[index+1]); NSApp.terminate(nil) }; return }
         if let index = CommandLine.arguments.firstIndex(of:"--validate-scenes"), CommandLine.arguments.count > index+1 { Task { await validateSceneRecovery(to:CommandLine.arguments[index+1]); NSApp.terminate(nil) }; return }
         if CommandLine.arguments.contains("--diagnose") { print(s.hardware.diagnostics()); fflush(stdout); NSApp.terminate(nil); return }
+        if let index = CommandLine.arguments.firstIndex(of:"--validate-quality"), CommandLine.arguments.count > index+1 {
+            Task { await validateQuality(model:s.model,to:CommandLine.arguments[index+1]); NSApp.terminate(nil) }; return
+        }
         s.model.onOpenStudio = { [weak self] in self?.showStudio() }
         s.model.onOSD = { [weak self] icon,title,level in self?.osd.show(icon:icon,title:title,level:level,screen:s.hardware.current?.screen) }
+        desktopController = DesktopCardController(model:s.model)
+        s.model.onToggleDesktopCard = { [weak self] in self?.desktopController?.toggle() }
+        if let index = CommandLine.arguments.firstIndex(of:"--validate-desktop"), CommandLine.arguments.count > index+1, let controller = desktopController {
+            Task { await controller.validate(to:CommandLine.arguments[index+1]); NSApp.terminate(nil) }; return
+        }
         statusController = DeskStatusController(model:s.model)
         if let index = CommandLine.arguments.firstIndex(of:"--validate-quick"), CommandLine.arguments.count > index+1, let controller = statusController {
             Task { await validateQuickUI(controller,model:s.model,directory:CommandLine.arguments[index+1]) }; return
         }
+        if UserDefaults.standard.bool(forKey:"desktopCard.visible") { desktopController?.show() }
         let first = !UserDefaults.standard.bool(forKey:"launchedV2")
         if first || CommandLine.arguments.contains("--dashboard") { showStudio(); UserDefaults.standard.set(true,forKey:"launchedV2") }
         if CommandLine.arguments.contains("--quick") { DispatchQueue.main.async { [weak self] in self?.statusController?.showPopover() } }
-        if CommandLine.arguments.contains("--pair") || UserDefaults.standard.bool(forKey:"paired.\(s.remote.host)") { s.remote.connect() }
+        if CommandLine.arguments.contains("--pair") { s.remote.connect() }
+        else if UserDefaults.standard.bool(forKey:"monitorMediaOnly") { s.remote.connect(remoteControl:false) }
+        else if UserDefaults.standard.bool(forKey:"paired.\(s.remote.host)") { s.remote.connect() }
     }
     func showStudio() {
         StudioState.shared.hardware.refresh(); StudioState.shared.model.keyboard.refreshPermission()
