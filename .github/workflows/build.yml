@@ -1,0 +1,28 @@
+name: macOS build and policy checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Keyboard and capability policies
+        run: zsh Tests/test-keyboard.sh
+      - name: Internal Carbon dispatch
+        run: zsh Tests/test-carbon.sh
+      - name: Build Apple silicon app
+        run: zsh build.sh
+      - name: Verify bundle
+        run: codesign --verify --deep --strict "M8 Studio.app"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: M8-Studio-arm64-development
+          path: ../M8 Studio.zip
+          if-no-files-found: error
