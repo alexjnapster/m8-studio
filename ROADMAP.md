@@ -88,3 +88,8 @@ regression: 75 PASS; seven internal Carbon callbacks passed. Native screenshots
 were inspected, including a fixed language-picker truncation. The
 trusted installed main app and accepted sound companion remain unchanged. Real
 fresh-Mac permission/connection journeys and dock/reboot coverage remain gates.
+
+The guided-setup source at 7e0d0de passed both public CI runs 39978634938 and
+39978629517. Accessibility work continues in the workspace: heading semantics,
+combined summary rows and Return bindings are added; a real assistive-technology
+and keyboard interaction journey remains unverified. No installed app was replaced.

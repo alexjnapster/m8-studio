@@ -73,3 +73,16 @@ checks (24 PASS). Policy regression passed 75 checks and all seven internal Carb
 callbacks passed. Native screenshots were inspected in both languages and themes. These checks do not certify first-run permissions on a different Mac,
 monitor-side menu interaction or disconnected hardware. Installed executables
 are preserved; the new UI is a workspace/source increment.
+
+## Accessibility follow-up, 2026-10-24
+
+The previously queued onboarding CI runs 39978634938 and 39978629517 both
+completed successfully on public commit 7e0d0de. These are build/policy/DSP checks;
+the 24 native setup layout/workflow checks were performed locally.
+
+A subsequent workspace change marks card/stage titles as accessibility headings,
+combines summary labels with their values, gives stage/actions stable identifiers,
+and configures native Return default actions for Continue and Finish. Actual
+VoiceOver announcements, focus order and physical keyboard navigation still need
+an interactive journey; metadata and compilation do not establish that result.
+Accepted installed apps are preserved.
