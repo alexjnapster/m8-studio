@@ -11,7 +11,7 @@ enum DeskStyle {
 }
 struct DeskCard<Content: View>: View {
     let title: String; let icon: String; @ViewBuilder var content: Content
-    var body: some View { VStack(alignment:.leading,spacing:16) { Label(L(title),systemImage:icon).font(.system(size:12,weight:.semibold)).foregroundStyle(.secondary); content }.padding(20).frame(maxWidth:.infinity,alignment:.leading).background(DeskStyle.card,in:RoundedRectangle(cornerRadius:22)).overlay(RoundedRectangle(cornerRadius:22).stroke(.primary.opacity(0.055),lineWidth:1)) }
+    var body: some View { VStack(alignment:.leading,spacing:16) { Label(L(title),systemImage:icon).font(.system(size:12,weight:.semibold)).foregroundStyle(.secondary).accessibilityAddTraits(.isHeader); content }.padding(20).frame(maxWidth:.infinity,alignment:.leading).background(DeskStyle.card,in:RoundedRectangle(cornerRadius:22)).overlay(RoundedRectangle(cornerRadius:22).stroke(.primary.opacity(0.055),lineWidth:1)) }
 }
 struct MonitorArt: View {
     var brightness: Double = 1; var small = false

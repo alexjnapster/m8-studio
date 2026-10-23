@@ -34,7 +34,7 @@ struct GuidedSetup: View {
             HStack {
                 VStack(alignment:.leading,spacing:7) {
                     Text(L("A GOOD START")).font(.caption.bold()).tracking(2).foregroundStyle(DeskStyle.brand)
-                    Text(L(stage.title)).font(.system(size:30,weight:.semibold,design:.rounded))
+                    Text(L(stage.title)).font(.system(size:30,weight:.semibold,design:.rounded)).accessibilityAddTraits(.isHeader).accessibilityIdentifier("setup.heading")
                     Text(L("A few clear choices. Keep what already works.")).font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -51,6 +51,7 @@ struct GuidedSetup: View {
                         .background(step == stage ? DeskStyle.brand.opacity(0.12):Color.primary.opacity(0.035),in:RoundedRectangle(cornerRadius:13))
                     }.buttonStyle(.plain).accessibilityLabel(LF("Step %@: %@",[String(step.rawValue+1),L(step.title)]))
                     .accessibilityAddTraits(step == stage ? .isSelected:[])
+                    .accessibilityIdentifier("setup.stage.\(step.rawValue)")
                 }
             }
             Group {
@@ -68,9 +69,9 @@ struct GuidedSetup: View {
                 Spacer()
                 if stage.rawValue > 0 { Button(L("Back")) { model.setupStage = SetupStage(rawValue:stage.rawValue-1)! } }
                 if stage == .finish {
-                    Button(L("Finish for now")) { model.finishGuidedSetup() }.buttonStyle(.borderedProminent).disabled(h.rollbackSeconds > 0)
+                    Button(L("Finish for now")) { model.finishGuidedSetup() }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).accessibilityIdentifier("setup.finish").disabled(h.rollbackSeconds > 0)
                 } else {
-                    Button(L("Continue")) { model.setupStage = SetupStage(rawValue:stage.rawValue+1)! }.buttonStyle(.borderedProminent)
+                    Button(L("Continue")) { model.setupStage = SetupStage(rawValue:stage.rawValue+1)! }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).accessibilityIdentifier("setup.continue")
                 }
             }
             Text(L("Only buttons you choose change settings. Skipping a step is fine; Setup stays in the sidebar.")).font(.caption).foregroundStyle(.secondary)
@@ -169,6 +170,6 @@ struct GuidedSetup: View {
         }
     }
     private func row(_ title:String,_ value:String)->some View {
-        HStack(alignment:.firstTextBaseline,spacing:18) { Text(L(title)).foregroundStyle(.secondary); Spacer(minLength:12); Text(value).multilineTextAlignment(.trailing).textSelection(.enabled) }.font(.callout)
+        HStack(alignment:.firstTextBaseline,spacing:18) { Text(L(title)).foregroundStyle(.secondary); Spacer(minLength:12); Text(value).multilineTextAlignment(.trailing).textSelection(.enabled) }.font(.callout).accessibilityElement(children:.combine)
     }
 }
