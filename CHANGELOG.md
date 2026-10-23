@@ -1,3 +1,12 @@
+## Sound companion development, 2026-10-23
+
+- Add local stereo PCM processing with Warmth, Bass +, Clear voices and Flat EQ.
+- Add eight editable bands, automatic preamp headroom, sub-bass protection, linked
+  peak limiting and native bypass; stop processing on route change, sleep or quit.
+- Add Ukrainian/English sound UI and menu-bar actions; preserve main media-key build.
+- Verify 43 DSP checks and live M80B audio flow. User accepts Bass + as fuller and
+  less harsh. No measured acoustic calibration or Atmos rendering is claimed.
+
 # 3.0.0 development — foundation for the v5 goal, 2026-10-22
 
 - Redesign the menu with Controls/Scenes pages, direct output/display choices, readable empty states and native right-click actions.

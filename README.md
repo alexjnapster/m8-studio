@@ -19,7 +19,7 @@ A native SwiftUI/AppKit menu-bar utility for Samsung displays. Built for Apple s
 
 | Display or path | Status |
 | --- | --- |
-| Samsung M8 M80B, LS32BM801UIXUA | Previously exercised on an M2 MacBook Air: 4K/60 modes, ColorSync, software dimming, stereo 48 kHz output and local UPnP volume/mute. Native media-key approval and final paired remote verification remain pending. |
+| Samsung M8 M80B, LS32BM801UIXUA | Previously exercised on an M2 MacBook Air: 4K/60 modes, ColorSync, software dimming, stereo 48 kHz output and local UPnP volume/mute. Standard monitor volume/mute keys and disconnected Mac-speaker fallback were physically accepted by the user. Final paired remote, reboot/dock and other hardware checks remain pending. |
 | Smart Monitor M5/M7/M8/M9, M1 and smart Odyssey G6/G7 SKU families | Model recognition and service-gated controls implemented; representative SKU fixtures pass. Other physical monitors have not been tested. Firmware and connection determine which services answer. |
 | Other external Samsung displays | macOS modes, software dimming and ColorSync are available; DDC controls require a successful probe. No Smart TV compatibility claim. |
 | Intel Macs | Not supported by this build; the bundled DDC helper uses Apple silicon interfaces. |
@@ -48,7 +48,7 @@ zsh Tests/test-keyboard.sh
 zsh Tests/test-carbon.sh
 ```
 
-The first suite checks media decoding, key ownership/release, mute repeat suppression, unrelated-key passthrough, Samsung identity fixtures and adaptive polling policy. The second checks all seven real Carbon callback dispatches internally; it does not synthesize physical key presses. On 2026-10-22, 51 policy checks and all seven internal command dispatches passed locally.
+The first suite checks media decoding, key ownership/release, mute repeat suppression, unrelated-key passthrough, Samsung identity fixtures and adaptive polling policy. The second checks all seven real Carbon callback dispatches internally; it does not synthesize physical key presses. On 2026-10-22, 75 policy checks and all seven internal command dispatches passed locally.
 
 The app also contains opt-in integration harnesses (`--validate`, `--validate-scenes`, `--validate-quick`). They can temporarily change display modes, brightness, output routing or profiles and may request monitor pairing. Use these deliberately on a connected test setup; they are not run automatically in CI. Hardware-dependent evidence must be kept separate from fixture tests.
 
@@ -65,3 +65,14 @@ This is an independent project, not affiliated with Samsung or Apple. App code i
 ## Current development increment
 
 Desktop controls (menu → More actions → Desktop controls), a HiDPI scaling explorer with render-buffer dimensions and safe preview, panel-scoped imported ICC profiles, explicit Samsung audio routing and immersive-playback setup guidance are in development. See [driver findings](SAMSUNG-DRIVER-FINDINGS.md) and [v5 roadmap](ROADMAP.md) for evidence and remaining work. These additions do not claim measured calibration, automatic Atmos activation or native WidgetKit gallery registration.
+
+## Sound presets and adjustable EQ
+
+The optional [M8 Studio Sound module](Sound/README.md) provides Warmth, Bass +,
+Clear voices and eight editable EQ bands with automatic headroom, linked peak
+protection and true bypass. Build with `zsh build-sound.sh`; install the resulting
+companion in Applications. It runs independently to preserve existing media-key
+permission. It processes stereo PCM locally, without audio recordings or uploads.
+The M80B listening test was accepted as fuller and less harsh with Bass +; presets
+are not instrument-measured speaker/room calibration. Run `python3 Tests/test-sound.py`
+for the DSP numerical checks.

@@ -30,7 +30,7 @@ Updated 2026-10-22. User priority: **interface and menu-bar experience**. This r
 
 ## External verification still needed
 
-The M80B is now connected again; the latest Core Audio check reports a selected Samsung DisplayPort route with two channels at 48 kHz and 3840 × 2160 at 60 Hz. Native media-key access still requires the user to refresh macOS Device Control/Accessibility permission. Physical/global keyboard delivery, final paired remote approval, other Samsung hardware, HDMI HDR, instrument color calibration and acoustic measurements cannot be certified by fixtures. Developer ID signing/notarization needs an available signing identity.
+The M80B is now connected again; the latest Core Audio check reports a selected Samsung DisplayPort route with two channels at 48 kHz and 3840 × 2160 at 60 Hz. Native media-key access is now verified by an enabled event tap, and the user physically confirmed standard monitor volume/mute keys plus native Mac-speaker fallback after disconnect. Final paired navigation, reboot/dock behavior, other Samsung hardware, HDMI HDR, instrument color calibration and acoustic measurements remain separate gates. Developer ID signing/notarization needs an available signing identity.
 
 ## Tracker limitation
 
@@ -53,3 +53,22 @@ User-requested target: v5. Earlier v2/v3 gates remain prerequisites, rather than
 ## Verified development increment, 2026-10-22
 
 Implemented compact menu redesign, native desktop card, M80B HDMI identity fix, separate M9 identities, fractional-refresh scaling explorer, panel-scoped imports and sound/spatial setup guidance. Latest automated evidence: 75 policy checks; seven internally dispatched Carbon callbacks; 12 native menu layouts; eight desktop layout/lifecycle checks; 10 quality/profile/legacy scene checks; 23 connected-display scene/recovery checks. User confirms the M8 Atmos menu is present. Its enabled state, remotely writable command and actual Mac Atmos playback are unverified. The working build is 3.0.0 development; v5 has not been declared complete.
+
+## Native key milestone verified
+
+2026-10-22: standard volume up/down and mute work with the connected M8; after disconnect, native Mac-speaker volume keys work normally. User physically confirmed both tests. CGGetEventTapList independently confirmed an enabled tap owned by the unchanged installed build. Preserve that working build while continuing v5 in the workspace.
+
+## Sound processing increment accepted, 2026-10-23
+
+M8 Studio Sound 0.1.0 is installed separately in Applications. Four presets, eight
+editable bands, a 50 Hz high-pass, automatic headroom, linked peak protection,
+menu-bar actions, native bypass and route/sleep teardown are implemented. Numerical
+DSP suite: 43 PASS. Live M80B 48 kHz stereo PCM processing was verified with a quiet
+generated signal. The user reports Bass + sounds fuller and less harsh with
+familiar music. Ukrainian and English interface, preset edits and persisted
+manual values were inspected. This is subjective acceptance, not measured acoustic
+calibration. The working main app and its native-key executable remain unchanged.
+A subsequent native Mac-speaker route check showed EQ off and Enable disabled.
+
+Next: publish the companion source/build evidence, test longer sessions and recovery
+when the monitor is available, and complete onboarding/distribution/signing gates.
