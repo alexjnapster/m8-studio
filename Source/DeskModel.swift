@@ -21,9 +21,9 @@ struct DeskScene: Identifiable, Codable, Equatable {
 }
 struct SceneFile: Codable { var version = 1; var scenes: [DeskScene] }
 enum DeskSection: String, CaseIterable, Identifiable {
-    case overview = "My desk", display = "Display", color = "Color", sound = "Sound", remote = "Remote", scenes = "Scenes", labs = "Labs", settings = "Settings"
+    case overview = "My desk", display = "Display", color = "Color", sound = "Sound", remote = "Remote", scenes = "Scenes", labs = "Labs", settings = "Settings", setup = "Setup"
     var id: String { rawValue }
-    var icon: String { switch self { case .overview: return "square.grid.2x2"; case .display: return "display"; case .color: return "circle.lefthalf.filled"; case .sound: return "speaker.wave.2"; case .remote: return "appletvremote.gen4"; case .scenes: return "square.stack.3d.up"; case .labs: return "flask"; case .settings: return "gearshape" } }
+    var icon: String { switch self { case .setup: return "wand.and.stars"; case .overview: return "square.grid.2x2"; case .display: return "display"; case .color: return "circle.lefthalf.filled"; case .sound: return "speaker.wave.2"; case .remote: return "appletvremote.gen4"; case .scenes: return "square.stack.3d.up"; case .labs: return "flask"; case .settings: return "gearshape" } }
 }
 struct ActivityItem: Identifiable { let id = UUID(); let date = Date(); let text: String }
 func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .current) -> Bool {
@@ -35,6 +35,7 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
     let colors = ColorProfiles(); let keyboard = DeskKeyboard()
     @Published var language = AppLanguage.current { didSet { AppLanguage.current = language } }
     @Published var section: DeskSection = .overview
+    @Published var setupStage: SetupStage = .display
     @Published var scenes: [DeskScene] = []
     @Published var activity: [ActivityItem] = []
     @Published var toast = ""

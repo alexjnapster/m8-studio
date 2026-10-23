@@ -49,6 +49,7 @@ struct MediaKeyOwnership {
     private var source: CFRunLoopSource?
     private var permissionTimer: Timer?
     init() {
+        guard !CommandLine.arguments.contains(where: { $0.hasPrefix("--validate") || $0 == "--diagnose" }) else { return }
         registerShortcuts(); refreshPermission(); updatePermissionTimer()
         activationObserver = NotificationCenter.default.addObserver(forName:NSApplication.didBecomeActiveNotification,object:nil,queue:.main) { [weak self] _ in Task { @MainActor in self?.refreshPermission() } }
     }

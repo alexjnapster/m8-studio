@@ -22,6 +22,9 @@ import AppKit
             existing.activate(options: []); exit(0)
         }
         let s = StudioState.shared
+        if let index = CommandLine.arguments.firstIndex(of:"--validate-setup"), CommandLine.arguments.count > index+1 {
+            Task { await validateSetup(model:s.model,to:CommandLine.arguments[index+1]); NSApp.terminate(nil) }; return
+        }
         if let index = CommandLine.arguments.firstIndex(of:"--validate"), CommandLine.arguments.count > index+1 { Task { await runValidation(to:CommandLine.arguments[index+1]); NSApp.terminate(nil) }; return }
         if let index = CommandLine.arguments.firstIndex(of:"--validate-scenes"), CommandLine.arguments.count > index+1 { Task { await validateSceneRecovery(to:CommandLine.arguments[index+1]); NSApp.terminate(nil) }; return }
         if CommandLine.arguments.contains("--diagnose") { print(s.hardware.diagnostics()); fflush(stdout); NSApp.terminate(nil); return }
@@ -41,7 +44,9 @@ import AppKit
         }
         if UserDefaults.standard.bool(forKey:"desktopCard.visible") { desktopController?.show() }
         let first = !UserDefaults.standard.bool(forKey:"launchedV2")
-        if first || CommandLine.arguments.contains("--dashboard") { showStudio(); UserDefaults.standard.set(true,forKey:"launchedV2") }
+        if first { s.model.section = .setup }
+        if CommandLine.arguments.contains("--setup") { s.model.section = .setup }
+        if first || CommandLine.arguments.contains("--dashboard") || CommandLine.arguments.contains("--setup") { showStudio(); UserDefaults.standard.set(true,forKey:"launchedV2") }
         if CommandLine.arguments.contains("--quick") { DispatchQueue.main.async { [weak self] in self?.statusController?.showPopover() } }
         if CommandLine.arguments.contains("--pair") { s.remote.connect() }
         else if UserDefaults.standard.bool(forKey:"monitorMediaOnly") { s.remote.connect(remoteControl:false) }

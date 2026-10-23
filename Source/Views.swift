@@ -68,6 +68,7 @@ struct StudioView: View {
                 ScrollView {
                     VStack(alignment:.leading,spacing:20) {
                         switch model.section {
+                        case .setup: GuidedSetup(model:model)
                         case .overview: overview
                         case .display: displayPage
                         case .color: colorPage
@@ -107,7 +108,7 @@ struct StudioView: View {
             Button { model.refresh() } label: { Image(systemName:"arrow.clockwise") }.buttonStyle(.borderless).help(L("Refresh this desk"))
         }.padding(.horizontal,28).padding(.vertical,21).background(DeskStyle.card.opacity(0.5))
     }
-    var pageSubtitle: String { switch model.section { case .overview:return "Everything you reach for, right here."; case .display:return "Make room for the way you work."; case .color:return "Good color begins with the right profile."; case .sound:return "Your speakers. Your keys. Your volume."; case .remote:return "The little remote that is always nearby."; case .scenes:return "A different mood, one thoughtful click."; case .labs:return "Small experiments. Easy to undo."; case .settings:return "Make Studio feel like yours." } }
+    var pageSubtitle: String { switch model.section { case .setup:return "A few clear choices. Keep what already works."; case .overview:return "Everything you reach for, right here."; case .display:return "Make room for the way you work."; case .color:return "Good color begins with the right profile."; case .sound:return "Your speakers. Your keys. Your volume."; case .remote:return "The little remote that is always nearby."; case .scenes:return "A different mood, one thoughtful click."; case .labs:return "Small experiments. Easy to undo."; case .settings:return "Make Studio feel like yours." } }
     var footer: some View { HStack(spacing:8) { Image(systemName:model.toast.isEmpty ? "circle.dotted":"checkmark.circle.fill").foregroundStyle(DeskStyle.brand); Text(L(model.toast.isEmpty ? "\(model.displayName) · \(h.current?.mode.map(modeLabel) ?? "Connected display")":model.toast)).font(.system(size:10)).lineLimit(2); Spacer(); Button { guide() } label: { Image(systemName:"questionmark.circle") }.buttonStyle(.plain).help(L("Open the full guide")) }.padding(.horizontal,28).frame(height:40).background(DeskStyle.card.opacity(0.55)) }
     var rollback: some View { HStack(spacing:12) { Image(systemName:"timer").foregroundStyle(DeskStyle.brand); Text(LF("Keep this view? Restoring in %@s",[String(describing:h.rollbackSeconds)])).font(.callout).monospacedDigit(); Spacer(); Button(L("Revert")) { h.revertMode(); model.announce("Previous display mode restored") }; Button(L("Keep")) { h.keepMode(); model.announce("Display mode kept") }.buttonStyle(.borderedProminent) }.padding(14).background(DeskStyle.brand.opacity(0.12)) }
     var overview: some View {
@@ -124,7 +125,8 @@ struct StudioView: View {
             HStack(alignment:.top,spacing:16) { brightnessCard; volumeCard }
             sceneStrip
             if model.showOnboarding { DeskCard(title:"MAKE YOURSELF AT HOME",icon:"hand.wave") {
-                HStack(alignment:.top,spacing:18) { onboarding("1","Pick your view","Display has three comfortable scaling choices."); onboarding("2","Use your keys","Enable Mac media keys in Settings."); onboarding("3","Save a scene","Keep a favorite setup for later.") }
+                Button(L("Start guided setup")) { model.section = .setup }.buttonStyle(.borderedProminent)
+                HStack(alignment:.top,spacing:18) { onboarding("1","Pick your view","Explore reported display modes with timed recovery."); onboarding("2","Use your keys","Enable Mac media keys in Settings."); onboarding("3","Save a scene","Keep a favorite setup for later.") }
                 HStack { Button(L("Explore keyboard controls")) { model.section = .settings }; Spacer(); Button(L("Got it")) { model.dismissWelcome() }.buttonStyle(.borderless) }
             } }
         }
