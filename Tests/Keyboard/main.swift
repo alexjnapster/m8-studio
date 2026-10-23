@@ -1,4 +1,5 @@
 import Cocoa
+import CoreAudio
 func openSettings(_ value: String) {}
 var count = 0
 func check(_ value: Bool, _ name: String) { guard value else { fatalError(name) }; count += 1; print("PASS \(name)") }
@@ -40,4 +41,31 @@ for device in [["OS":"Android","modelName":"LS32BM801UIXUA"],["OS":"Tizen","mode
 check(deskPollingInterval(following:false,scheduled:false) == 30,"idle timer backs off to 30 seconds")
 check(deskPollingInterval(following:false,scheduled:true) == 15,"schedule checks every 15 seconds")
 check(deskPollingInterval(following:true,scheduled:true) == 1,"brightness follow keeps one-second response")
+print("Total: \(count) checks passed")
+check(samsungDisplayAudio(name:"SAMSUNG",manufacturer:"",transport:kAudioDeviceTransportTypeDisplayPort),"Samsung DisplayPort audio recognized")
+check(samsungDisplayAudio(name:"S32FM90",manufacturer:"",transport:kAudioDeviceTransportTypeHDMI),"Samsung model-named HDMI audio recognized")
+check(samsungDisplayAudio(name:"Display Audio",manufacturer:"Samsung",transport:kAudioDeviceTransportTypeHDMI),"Samsung manufacturer metadata recognized on display transport")
+check(!samsungDisplayAudio(name:"Samsung Buds",manufacturer:"Samsung",transport:kAudioDeviceTransportTypeBluetooth),"Samsung Bluetooth headset keeps native Mac volume")
+check(!samsungDisplayAudio(name:"Samsung USB Headset",manufacturer:"Samsung",transport:kAudioDeviceTransportTypeUSB),"Samsung USB headset is not mistaken for monitor speakers")
+check(!samsungDisplayAudio(name:"Other Display",manufacturer:"Other",transport:kAudioDeviceTransportTypeHDMI),"Unrelated HDMI audio is not controlled")
+check(monitorAudioRouteMatches(candidates:["display-a"],active:"display-a",binding:nil),"One connected monitor audio route works automatically")
+check(!monitorAudioRouteMatches(candidates:["display-a","display-b"],active:"display-a",binding:nil),"Multiple monitor outputs require explicit binding")
+check(monitorAudioRouteMatches(candidates:["display-a","display-b"],active:"display-a",binding:"display-a"),"Bound monitor route is controlled")
+check(!monitorAudioRouteMatches(candidates:["display-a","display-b"],active:"display-b",binding:"display-a"),"Other monitor route is not controlled")
+check(!monitorAudioRouteMatches(candidates:["display-b"],active:"display-b",binding:"display-a"),"Disconnected saved route does not redirect to a different monitor")
+check(!monitorAudioRouteMatches(candidates:["display-a"],active:nil,binding:nil),"Missing output remains native")
+check(!monitorAudioRouteMatches(candidates:[""],active:"",binding:nil),"Empty audio identity never matches")
+print("Total: \(count) checks passed")
+check(SamsungDriverIdentity.match(vendor:0x4c2d,product:0x7267) == SamsungDriverIdentity(family:"M80B",variant:"USB-C"),"Official M80B USB-C identity")
+check(SamsungDriverIdentity.match(vendor:0x4c2d,product:0x7269) == SamsungDriverIdentity(family:"M80B",variant:"HDMI"),"Official M80B HDMI identity receives M8 guidance")
+check(SamsungDriverIdentity.match(vendor:0x4c2d,product:0xe099) == SamsungDriverIdentity(family:"M90SF",variant:"USB-C VRR"),"Official M9 USB-C VRR variant stays M9")
+check(SamsungDriverIdentity.match(vendor:0x4c2d,product:0xe08f)?.family != "M80B","M9 HDMI VRR never acquires M8 policy")
+check(SamsungDriverIdentity.match(vendor:0x1234,product:0x7267) == nil,"Other vendor with same product is not Samsung")
+check(SamsungDriverIdentity.match(vendor:0x4c2d,product:0x1234) == nil,"Unknown Samsung panel stays unclassified")
+print("Total: \(count) checks passed")
+check(refreshLabel(59.94) == "59.94","Fractional refresh label is preserved")
+check(refreshLabel(60) == "60","Integer refresh label stays compact")
+check(refreshLabel(59.9999) == "60","Display precision avoids floating-point noise")
+check(refreshLabel(0) == "Variable / unspecified","Unspecified refresh is not advertised as zero Hz")
+check(refreshLabel(.infinity) == "Variable / unspecified","Invalid refresh has a safe label")
 print("Total: \(count) checks passed")

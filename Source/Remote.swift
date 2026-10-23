@@ -94,14 +94,21 @@ final class MonitorTrust: NSObject, URLSessionDelegate {
     private var session: URLSession?
     private var generation = UUID()
     private var wantsConnection = false
+    private var wantsRemoteControl = true
+    private var screenSleeping = false
+    private var lifecycleObservers: [NSObjectProtocol] = []
     private var wakeObserver: NSObjectProtocol?
     init() {
         macAddress = UserDefaults.standard.string(forKey: "mac.\(host)") ?? ""
+        let center = NSWorkspace.shared.notificationCenter
+        lifecycleObservers.append(center.addObserver(forName:NSWorkspace.willSleepNotification,object:nil,queue:.main) { [weak self] _ in Task { @MainActor in self?.suspendForSleep() } })
+        lifecycleObservers.append(center.addObserver(forName:NSWorkspace.screensDidSleepNotification,object:nil,queue:.main) { [weak self] _ in Task { @MainActor in self?.screenSleeping = true } })
+        lifecycleObservers.append(center.addObserver(forName:NSWorkspace.screensDidWakeNotification,object:nil,queue:.main) { [weak self] _ in Task { @MainActor in guard let self else { return }; self.screenSleeping = false; await self.refreshMedia() } })
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in
                 guard let self, self.wantsConnection else { return }
                 try? await Task.sleep(for: .seconds(3))
-                if self.wantsConnection { self.connect() }
+                if self.wantsConnection { self.connect(remoteControl:self.wantsRemoteControl) }
             }
         }
     }
@@ -133,15 +140,20 @@ final class MonitorTrust: NSObject, URLSessionDelegate {
             else { status = found.isEmpty ? "No monitor found. Enter its IP from Settings → Network on the monitor." : "Choose your monitor address below." }
         }
     }
+    private func suspendForSleep() {
+        generation = UUID(); verifiedHost = nil; mediaTask?.cancel(); volume = nil
+        changingVolume = false; changingMute = false
+        stopSocket("Connection paused while your Mac sleeps.")
+    }
     func disconnect() {
         wantsConnection = false
         generation = UUID(); verifiedHost = nil; mediaTask?.cancel(); pingTask?.cancel(); volume = nil; changingVolume = false; changingMute = false; mediaStatus = "Connect to read monitor volume."; connectTimeout?.cancel(); socket?.cancel(with: .goingAway, reason: nil); socket = nil; session?.invalidateAndCancel(); session = nil
         connected = false; busy = false; status = "Disconnected"
     }
-    func connect() {
+    func connect(remoteControl:Bool = true) {
         let address = host.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard localHost(address) else { status = "Enter a private IPv4 address or a .local/.lan hostname."; return }
-        disconnect(); wantsConnection = true; host = address; let stamp = generation; busy = true; status = "Checking monitor…"
+        disconnect(); wantsConnection = true; wantsRemoteControl = remoteControl; host = address; let stamp = generation; busy = true; status = "Checking monitor…"
         connectTimeout = Task { try? await Task.sleep(for:.seconds(45)); if !Task.isCancelled, generation == stamp, !connected { stopSocket("Connection timed out. Check the monitor and try again.") } }
         Task {
             do {
@@ -159,6 +171,12 @@ final class MonitorTrust: NSObject, URLSessionDelegate {
                     macAddress = mac; UserDefaults.standard.set(mac, forKey: "mac.\(address)")
                 }
                 UserDefaults.standard.set(address, forKey: "monitorHost")
+                UserDefaults.standard.set(!remoteControl,forKey:"monitorMediaOnly")
+                if !remoteControl {
+                    connectTimeout?.cancel(); busy = false
+                    status = mediaAvailable ? "Volume connected. Remote navigation is not paired.":"Monitor found, but volume could not be read."
+                    return
+                }
                 var url = URLComponents(); url.scheme = "wss"; url.host = address; url.port = 8002; url.path = "/api/v2/channels/samsung.remote.control"
                 url.queryItems = [URLQueryItem(name: "name", value: Data("M8 Studio".utf8).base64EncodedString())]
                 let savedToken = await Vault.readWithoutBlocking(address)
@@ -227,7 +245,7 @@ final class MonitorTrust: NSObject, URLSessionDelegate {
     // back off. A failed read uses the longer interval until the monitor returns.
     var isAudioActive: (() -> Bool)?
     var mediaPollInterval: Double {
-        volume != nil && (isAudioActive?() ?? false) ? 5 : 30
+        !screenSleeping && volume != nil && (isAudioActive?() ?? false) ? 5 : 30
     }
     private func startMediaMonitoring(_ stamp:UUID) {
         mediaTask?.cancel()

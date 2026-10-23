@@ -17,6 +17,10 @@ jobs:
         run: zsh Tests/test-keyboard.sh
       - name: Internal Carbon dispatch
         run: zsh Tests/test-carbon.sh
+      - name: Sound DSP numerical checks
+        run: python3 Tests/test-sound.py
+      - name: Build sound companion
+        run: zsh build-sound.sh
       - name: Build Apple silicon app
         run: zsh build.sh
       - name: Verify bundle
@@ -25,8 +29,9 @@ jobs:
         run: |
           mkdir -p artifacts
           cp "../M8 Studio.zip" artifacts/M8-Studio-arm64.zip
+          cp "../M8 Studio Sound.zip" artifacts/M8-Studio-Sound-arm64.zip
       - uses: actions/upload-artifact@v7
         with:
           name: M8-Studio-arm64-development
-          path: artifacts/M8-Studio-arm64.zip
+          path: artifacts/*.zip
           if-no-files-found: error
