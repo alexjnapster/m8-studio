@@ -117,10 +117,15 @@ struct SoundTuningCard: View {
     @ObservedObject var model:DeskModel
     var body:some View {
         DeskCard(title:"SOUND TUNING",icon:"slider.horizontal.3") {
-            step("Start with Standard","In the monitor’s Sound menu, choose Standard as a baseline. Compare Adaptive Sound+ only if your model offers it.")
+            Text(L("Warmth, Bass +, Clear voices and an editable eight-band EQ are available in M8 Studio Sound.")).font(.callout)
+            Button(L("Open sound presets & EQ")) {
+                NSWorkspace.shared.open(URL(fileURLWithPath:"/Applications/M8 Studio Sound.app"), configuration:NSWorkspace.OpenConfiguration()) { _,error in
+                    if error != nil { DispatchQueue.main.async { model.announce(L("Install M8 Studio Sound in Applications using build-sound.sh.")) } }
+                }
+            }.buttonStyle(.borderedProminent)
             step("Compare at the same level","Use a familiar voice and music excerpt. Match perceived loudness before choosing; a louder preset can appear better.")
-            step("Keep a neutral baseline","If an equalizer is available on the monitor, start flat and make small changes. Studio does not apply system-wide EQ or M9 speaker calibration to your M8.")
-            Text(L("These are listening steps in Samsung’s own menus. No sound preset is changed automatically.")).font(.caption2).foregroundStyle(.secondary)
+            Text(L("Sound processing runs in a separate companion to preserve the working monitor-key permission. It supports stereo PCM, automatic headroom, peak protection and native bypass.")).font(.caption).foregroundStyle(.secondary)
+            Text(L("Presets are engineered starting points, not measured calibration of your speakers or room.")).font(.caption2).foregroundStyle(.secondary)
             Text(L("Stereo PCM is not evidence of a Dolby Atmos playback path.")).font(.caption2).foregroundStyle(.secondary)
         }
     }
