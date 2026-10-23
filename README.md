@@ -76,3 +76,16 @@ permission. It processes stereo PCM locally, without audio recordings or uploads
 The M80B listening test was accepted as fuller and less harsh with Bass +; presets
 are not instrument-measured speaker/room calibration. Run `python3 Tests/test-sound.py`
 for the DSP numerical checks.
+
+## Guided setup in development builds
+
+Fresh launches open a five-step Setup journey; it can be reopened from the sidebar
+or with `--setup`. Select the display, compare reported scaling modes, preserve the
+panel's profile, choose audio, and optionally enable media keys. All stages can be
+skipped. Finishing saves walkthrough completion without applying picture, profile
+or sound settings. Existing preview recovery must be resolved first.
+
+`--validate-setup <directory>` renders all five stages in both languages and
+appearances and checks completion/recovery and hardware-state preservation. This
+harness does not acquire media-key access or register shortcuts. It does not
+replace a real first-run test on another Mac.

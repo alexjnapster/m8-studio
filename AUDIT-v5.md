@@ -7,7 +7,7 @@ Updated 2026-10-22. **V5 is not complete and has not earned an objective 100/100
 | Menu UX and layout | 12 native popover combinations pass: Ukrainian/English, light/dark, controls/empty/favorite scenes. Initial startup visibility race fixed. | Live long sessions, available-volume layouts, keyboard-only navigation and VoiceOver journey. |
 | Desktop UX | Four native locale/theme layouts plus pin, desktop level, hide and reopen checks pass. Shares app model without extra polling. | Native WidgetKit gallery extension, multi-display relocation/position recovery in a real unplug/replug session. |
 | UI and design | Native SwiftUI/AppKit controls, system appearance, accessible action labels, readable localized empty states. Inactive rendering/audio/profile badges made explicit. | Consistent focus treatment, reduced-motion journey and independent user feedback; no invented design score. |
-| Initial setup | Detects displays/output routes; preserves existing profiles; model-aware modes and setup guidance. Volume-only connection no longer requires remote navigation pairing. | Fully guided new-Mac setup and signed-update permission identity recovery. Physical media-key confirmation is complete. |
+| Initial setup | Detects displays/output routes; preserves existing profiles; model-aware modes and setup guidance. Volume-only connection no longer requires remote navigation pairing. | Five-stage guided setup implemented and locally checked in UK/EN/light/dark. A real fresh-Mac permission/connection journey and signed-update identity recovery remain; physical media-key confirmation is complete. |
 | Native keyboard behavior | 75 decoding, ownership, Samsung routing/identity and refresh-label checks; seven real Carbon callbacks dispatched internally. Other audio routes pass native media keys through. | Permission repair succeeded after the stale-entry removal authorization. macOS reports one enabled suppressing event tap owned by the installed app. User physically confirmed monitor Volume Down/Up, monitor mute/unmute and native Mac-speaker volume after disconnecting. Longer sessions, reboot/wake and future signed-update behavior remain to test. |
 | Recovery and reliability | 23 connected-display scene checks pass, including wrong-display undo, route notifications, guarded mode preview and exact mode restoration. | Sleep/reboot/dock matrix and longer real-world operation. |
 | Image and scaling | 4K60 actual M80B, HiDPI/render-buffer explorer, fractional refresh preservation, timed preview, legacy scenes checked. | Instrument calibration, additional cables/HDMI and other model generations. No app can create physical panel resolution or backlight capability. |
@@ -15,7 +15,7 @@ Updated 2026-10-22. **V5 is not complete and has not earned an objective 100/100
 | Sound | Selected Samsung stereo 48 kHz route read from Core Audio; real network volume readback available again after correcting a stale address. User confirms monitor Atmos menu exists. | Bass + listening comparison accepted by the user as fuller and less harsh; 43 DSP checks and live stereo PCM flow pass. Measured acoustic calibration, long-session recovery, Atmos state/command and encoded playback remain unverified. No preset is labeled professionally calibrated. |
 | Performance | Coalesced Core Audio changes, adaptive polling, shared desktop model. One current process sample was idle in the normal main run loop; physical footprint about 54 MB at that instant. | Repeatable energy, wakeup and long-session profiling; this sample is not a battery-life benchmark. |
 | Privacy | Shareable diagnostics omit names, private addresses, tokens, persistent identities and profile paths. Private EDID/profile data stays local. | Continue checking every publication bundle. |
-| Distribution | Public v5 foundation CI passed; both current main and sound development bundles build locally and archives verify. Prior working builds are retained. | Publish and verify the sound increment and its clean CI build, stable signing/notarization, and a finished v5 release. Published stable/beta release remains 2.1. |
+| Distribution | Public v5 foundation CI passed; both current main and sound development bundles build locally and archives verify. Prior working builds are retained. | Sound-only beta published and public download verified; named push/PR CI runs passed. New onboarding increment CI, stable signing/notarization and a finished v5 release remain. Main app beta remains 2.1. |
 
 ## Fixes from this audit
 
@@ -58,3 +58,18 @@ measured speaker/room correction, encoded Atmos processing, oversampled true-pea
 limiting or signed-update identity guarantee. Future main-app builds include an
 entry point to the separately installed sound module; the trusted main app has
 not been overwritten for that UI change.
+
+## Guided setup development evidence
+
+Five native stages provide explicit display, picture/color, sound, keyboard and
+summary actions. The walkthrough never treats reading a status as proof of a
+physical key test or measured calibration. It supports optional/skipped steps and
+a language switch without resetting the selected stage. Finishing is blocked
+while display-mode recovery is pending. The UI validation path skips keyboard
+registration and tap creation, preserving the installed app's input ownership.
+
+`--validate-setup <directory>` passed 20 native layouts and four workflow/state
+checks (24 PASS). Policy regression passed 75 checks and all seven internal Carbon
+callbacks passed. Native screenshots were inspected in both languages and themes. These checks do not certify first-run permissions on a different Mac,
+monitor-side menu interaction or disconnected hardware. Installed executables
+are preserved; the new UI is a workspace/source increment.

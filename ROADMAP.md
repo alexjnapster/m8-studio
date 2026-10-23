@@ -70,5 +70,21 @@ manual values were inspected. This is subjective acceptance, not measured acoust
 calibration. The working main app and its native-key executable remain unchanged.
 A subsequent native Mac-speaker route check showed EQ off and Enable disabled.
 
-Next: publish the companion source/build evidence, test longer sessions and recovery
-when the monitor is available, and complete onboarding/distribution/signing gates.
+Sound source and the sound-only beta are now published; both named push/PR CI builds passed. Next: test longer sessions and recovery when the monitor is available, and complete onboarding/distribution/signing gates.
+
+## Guided setup development, 2026-10-23
+
+A five-step setup journey now covers display selection, reported HiDPI modes and
+profile provenance, sound routing/EQ, optional media keys and a live summary. A
+fresh first launch opens Setup; existing users can reopen it from the sidebar.
+Stages can be skipped and language changes retain progress. Settings change only
+through explicit actions; finishing cannot accept a pending mode preview and does
+not apply a mode, ICC, audio route or preset. Validation no longer registers a
+media-key tap or global shortcuts in the main app's diagnostic/UI harnesses.
+
+Local evidence: 24 PASS — 20 UK/EN/light/dark stage layouts plus pending-preview,
+successful completion, hardware-state preservation and no-tap checks. Policy
+regression: 75 PASS; seven internal Carbon callbacks passed. Native screenshots
+were inspected, including a fixed language-picker truncation. The
+trusted installed main app and accepted sound companion remain unchanged. Real
+fresh-Mac permission/connection journeys and dock/reboot coverage remain gates.

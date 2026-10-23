@@ -22,3 +22,5 @@ Tests/QuickPreviews/
 Tests/QuickPreviews-*/
 Tests/DesktopPreviews/
 Tests/QualityPreviews/
+
+Tests/SetupPreviews/

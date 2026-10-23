@@ -1,3 +1,12 @@
+## Guided setup development, 2026-10-23
+
+- Add a repeatable five-step UK/EN journey for displays, picture/color, sound,
+  keyboard and a live summary; fresh first launch opens Setup.
+- Preserve progress across language changes and allow skipped steps. Require
+  pending display preview recovery before completion.
+- Prevent diagnostic/UI validation runs from acquiring media keys or registering
+  global shortcuts. Preserve accepted installed apps.
+
 ## Sound companion development, 2026-10-23
 
 - Add local stereo PCM processing with Warmth, Bass +, Clear voices and Flat EQ.
