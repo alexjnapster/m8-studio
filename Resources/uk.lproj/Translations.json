@@ -454,5 +454,10 @@
   "Other audio output": "Інший звуковий вихід",
   "Profile unavailable": "Профіль недоступний",
   "macOS refused the media-key connection. Quit and reopen Studio after granting access.": "macOS відхилила підключення медіаклавіш. Після надання дозволу закрийте й відкрийте Studio знову.",
-  "macOS has not granted this installed build access. Remove the old M8 Studio permission entry and add /Applications/M8 Studio.app again.": "macOS не надала доступ цій встановленій збірці. Видаліть старий запис M8 Studio з дозволів і додайте /Applications/M8 Studio.app знову."
+  "macOS has not granted this installed build access. Remove the old M8 Studio permission entry and add /Applications/M8 Studio.app again.": "macOS не надала доступ цій встановленій збірці. Видаліть старий запис M8 Studio з дозволів і додайте /Applications/M8 Studio.app знову.",
+  "Warmth, Bass +, Clear voices and an editable eight-band EQ are available in M8 Studio Sound.": "Теплий звук, Бас +, Чіткі голоси та восьмисмуговий EQ доступні в M8 Studio Sound.",
+  "Open sound presets & EQ": "Відкрити пресети звуку та EQ",
+  "Install M8 Studio Sound in Applications using build-sound.sh.": "Встановіть M8 Studio Sound у «Програми» за допомогою build-sound.sh.",
+  "Sound processing runs in a separate companion to preserve the working monitor-key permission. It supports stereo PCM, automatic headroom, peak protection and native bypass.": "Обробка звуку працює в окремому модулі, щоб зберегти чинний дозвіл для медіаклавіш. Доступні стерео PCM, автоматичний запас рівня, захист від піків і повернення оригінального звуку.",
+  "Presets are engineered starting points, not measured calibration of your speakers or room.": "Пресети — це інженерні початкові налаштування, а не виміряна калібрація ваших динаміків чи кімнати."
 }
