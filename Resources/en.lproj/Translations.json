@@ -454,5 +454,10 @@
   "Other audio output": "Other audio output",
   "Profile unavailable": "Profile unavailable",
   "macOS refused the media-key connection. Quit and reopen Studio after granting access.": "macOS refused the media-key connection. Quit and reopen Studio after granting access.",
-  "macOS has not granted this installed build access. Remove the old M8 Studio permission entry and add /Applications/M8 Studio.app again.": "macOS has not granted this installed build access. Remove the old M8 Studio permission entry and add /Applications/M8 Studio.app again."
+  "macOS has not granted this installed build access. Remove the old M8 Studio permission entry and add /Applications/M8 Studio.app again.": "macOS has not granted this installed build access. Remove the old M8 Studio permission entry and add /Applications/M8 Studio.app again.",
+  "Warmth, Bass +, Clear voices and an editable eight-band EQ are available in M8 Studio Sound.": "Warmth, Bass +, Clear voices and an editable eight-band EQ are available in M8 Studio Sound.",
+  "Open sound presets & EQ": "Open sound presets & EQ",
+  "Install M8 Studio Sound in Applications using build-sound.sh.": "Install M8 Studio Sound in Applications using build-sound.sh.",
+  "Sound processing runs in a separate companion to preserve the working monitor-key permission. It supports stereo PCM, automatic headroom, peak protection and native bypass.": "Sound processing runs in a separate companion to preserve the working monitor-key permission. It supports stereo PCM, automatic headroom, peak protection and native bypass.",
+  "Presets are engineered starting points, not measured calibration of your speakers or room.": "Presets are engineered starting points, not measured calibration of your speakers or room."
 }
