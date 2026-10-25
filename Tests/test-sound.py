@@ -61,4 +61,44 @@ with tempfile.TemporaryDirectory(prefix='m8-dsp-test-') as temp:
     for i in range(1000,2000): signal[2*i]=8; signal[2*i+1]=4
     out,_=render(48000,[0]*8,signal)
     check(max(abs(out[i]-2*out[i+1]) for i in range(0,len(out),2))<1e-6,'linked stereo limiter preserves image')
+    # Channel/dynamics controls are opt-in; neutral settings retain EQ behavior.
+    d.m8_create_with_options.argtypes=[C.c_double,C.POINTER(C.c_double),C.c_double,C.c_int,C.c_double,C.c_double,C.c_int]
+    d.m8_create_with_options.restype=C.c_void_p
+    def enhanced(samples,balance=0,mono=0,left=0,right=0,night=0,rate=48000):
+        handle=d.m8_create_with_options(rate,(C.c_double*8)(*([0]*8)),balance,mono,left,right,night)
+        assert handle
+        buf=(C.c_float*len(samples))(*samples)
+        for begin in range(0,len(samples)//2,137):
+            n=min(137,len(samples)//2-begin)
+            d.m8_process(handle,C.cast(C.byref(buf,begin*2*4),C.POINTER(C.c_float)),n)
+        result=list(buf); d.m8_destroy(handle)
+        return result
+    tone=[v for i in range(24000) for v in [0.03*math.sin(2*math.pi*1000*i/48000),0]]
+    neutral,_=render(48000,[0]*8,tone)
+    check(enhanced(tone)==neutral,'neutral stereo options preserve original processing')
+    mono=enhanced(tone,mono=1)
+    check(max(abs(mono[i]-mono[i+1]) for i in range(0,len(mono),2))<1e-7,'mono maps left-only input equally to both channels')
+    check(abs(rms(mono[2000::2])/rms(neutral[2000::2])-0.5)<1e-6,'mono averages without a gain boost')
+    anti=[v for i in range(12000) for v in [0.2*math.sin(i*0.13),-0.2*math.sin(i*0.13)]]
+    check(all(x==0 for x in enhanced(anti,mono=1)),'opposite-phase mono cancels without added signal')
+    balanced=enhanced(tone,balance=1)
+    check(all(x==0 for x in balanced),'full-right balance silences left-only material')
+    rightTone=[v for i in range(12000) for v in [0,0.1*math.sin(i*0.13)]]
+    check(all(x==0 for x in enhanced(rightTone,balance=-1)),'full-left balance silences right-only material')
+    trimmed=enhanced(tone,left=-6)
+    check(abs(rms(trimmed[2000::2])/rms(neutral[2000::2])-10**(-6/20))<1e-6,'left channel trim is exact attenuation')
+    stereoTone=[v for i in range(24000) for v in [0.04*math.sin(i*0.13)]*2]
+    rt=enhanced(stereoTone,right=-12)
+    check(abs(rms(rt[2000::2])/rms(rt[2001::2])-10**(12/20))<1e-5,'right trim does not affect left channel')
+    check(enhanced(tone,night=1)==neutral,'night mode leaves quiet material unchanged')
+    loud=[v for i in range(48000) for v in [0.8*math.sin(i*0.13),0.4*math.sin(i*0.13)]]
+    plain=enhanced(loud); night=enhanced(loud,night=1)
+    check(rms(night[48000:])<rms(plain[48000:])*0.65,'night mode reduces sustained loud peaks')
+    check(max(abs(night[i]-2*night[i+1]) for i in range(0,len(night),2))<1e-6,'night compression is stereo-linked')
+    for rate in (32000,44100,48000,96000,192000):
+        hostile=[float('nan'),float('inf')]+[rng.uniform(-10,10) for _ in range(12000)]
+        output=enhanced(hostile,balance=0.2,mono=1,left=-1,right=-2,night=1,rate=rate)
+        check(all(math.isfinite(v) and abs(v)<=.980001 for v in output),f'{rate} Hz enhanced overload remains finite and bounded')
+    for options in [(1.1,0,0,0,0),(0,2,0,0,0),(0,0,1,0,0),(0,0,0,-13,0),(0,0,0,0,2),(float('nan'),0,0,0,0)]:
+        check(not d.m8_create_with_options(48000,(C.c_double*8)(*([0]*8)),*options),'invalid stereo/dynamics configuration rejected')
     print(f'{count} PASS')
