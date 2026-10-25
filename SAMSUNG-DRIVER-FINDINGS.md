@@ -76,3 +76,52 @@ The user reports installed firmware `1720` and a country-related online-update b
 Samsung's official 2022 T-PTMWWC update guide documents a USB method using the extracted `T-PTMWWC` package at the USB root, attached to the monitor using the necessary USB-C hub/adapter. It notes that an update can begin automatically after insertion and may reset picture/audio settings. This is a possible alternative to online availability, not a verified region bypass, downgrade or proof that an update is needed. No firmware was flashed, modified or downloaded to a USB device.
 
 No exact-M80B sound-fix changelog or validated community EQ correction was found in the reviewed sources. [Samsung's 2025 distortion advisory](https://www.samsung.com/us/support/troubleshoot/TSG10010544/) applies to M80F/M90SF and suggests disabling Adaptive Sound Pro for muffled/fading audio. It must not be relabeled an M80B thin-bass firmware fix. The user's described problem is thin/harsh sound with little bass, so a neutral baseline and cautious matched-level comparison are the first listening experiments.
+
+
+## Expanded software/firmware investigation, 2026-10-24
+
+See [static package research and transfer matrix](SAMSUNG-SOFTWARE-FIRMWARE-RESEARCH.md).
+Current official Mac SDM and Easy Setting Box packages, an S8 firmware image and
+bounded M80B update metadata were inspected without executing or flashing them.
+A vendor DDC negotiation lead and more specific factory-type evidence are now
+recorded; neither confirms a working M80B brightness unlock or an exact audio DSP.
+
+## ViewFinity S9 audio transfer audit — 2026-10-24
+
+The official [S90PC support listing](https://www.samsung.com/in/support/model/LS27C900PAWXXL/)
+provides Device(Install) 1.0, `S27C90xP.exe`, dated 2023-07-07.
+Downloaded package SHA256:
+`4c67193a5e44dbb6c89a07773dd6d07d5b2d4d29fc0ec2c9221ae5c57badd431`.
+Static PE-overlay/EGG extraction found seven entries: the Windows installer,
+monitor INF/ICM/catalog and duplicate manual-install INF/ICM/catalog. The INF
+is Monitor class, DriverVer 2023-03-23 1.0.0.0, DP SAM7394 and USB-C SAM7395.
+It associates `S27C90xP.icm` and display declarations. No separate audio INF,
+audio `.sys`, acoustic coefficient file or Dolby payload appears in that inventory.
+The opaque installer was not executed or exhaustively decompiled. This is not
+proof about all firmware contents. Vendor files stay outside the source repo.
+
+Samsung lists [S9 Adaptive Sound+ and 2×5 W speakers](https://www.samsung.com/ca/monitors/high-resolution/viewfinity-s9-27-inch-ls27c900panxza/)
+and [M9 Adaptive Sound Pro and 10 W output](https://www.samsung.com/ca/monitors/smart/smart-monitor-m9-32-inch-smart-tv-apps-4k-oled-ls32fm900snxza/).
+The [M9 announcement](https://news.samsung.com/global/samsung-releases-smart-monitor-m9-with-ai-powered-qd-oled-display)
+also names Active Voice Amplifier Pro. These are monitor features, not portable
+Mac DSP modules. Equal power ratings do not establish matching speakers,
+enclosures, amplifiers or safe transferable acoustic correction.
+
+Reusable directions are explicit dialogue presets, matched-level comparison,
+optional content dynamics, per-model capability discovery and per-output saved
+EQ. Existing Clear voices and Bass+ are independently implemented starting
+points. No extracted Samsung sound algorithm or coefficient is being bundled.
+Room adaptation requires a measurement workflow and validation; source-content
+analysis alone cannot measure speaker/room response. Dynamic bass should be
+bounded by level/headroom and independently tested before it is offered.
+
+Samsung's [2025 distortion advisory](https://www.samsung.com/us/support/troubleshoot/TSG10010544/)
+specifically covers M80F and M90SF and suggests disabling Adaptive Sound Pro
+for muffled/fading sound. It supports an optional troubleshooting guide for those
+models, not enabling the feature everywhere or calling it an M80B firmware fix.
+No automatic monitor DSP setting or firmware change was performed.
+
+Implementation follow-up: S90PC DP/USB-C PnP identities now have their own family
+classification. The S27C90xP Tizen model pattern is eligible for service discovery;
+actual control still requires the same capability/readback gates. No sound DSP
+coefficients or audio-format declarations are copied from the S9 display INF.

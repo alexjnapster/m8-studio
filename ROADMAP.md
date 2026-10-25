@@ -1,95 +1,161 @@
-# Goal: deliver M8 Studio v5 end to end
+# M8 Studio v5 — consolidated delivery goal
 
-Updated 2026-10-22. User priority: **interface and menu-bar experience**. This roadmap is the active working goal; no perfection or physical compatibility claim is implied by a software release.
+Updated 2026-10-25 after the user's advanced scaling/audio priority and connected M8 tests.
 
-## Phase 1 — finish the v2 interface upgrade
+Publication order update: the user now explicitly requests updating GitHub with
+this development source before full v5 completion. Publish the reviewed source,
+keep the draft PR's acceptance status honest and verify remote CI. Stable v5
+release and installed promotion still require their remaining gates.
 
-- Deliver a polished compact menu with separate Controls and Scenes views, readable display summary, direct display/audio selection where available, selected brightness presets, useful empty states, keyboard setup access and clear mode recovery.
-- Extend the native right-click menu with checked display and sound-output choices, preserving safe scene previews and reset.
-- Keep Ukrainian complete and default, with equivalent English behavior, accessibility labels and light/dark appearance.
-- Validate controls, empty scenes and populated scenes in both languages/themes; inspect native screenshots and actual menu interaction. Install the verified build while retaining the previous app.
-- Publish reviewed source, verify the public macOS CI build, and provide a downloadable development release with checksums and accurate limitations.
+BetterDisplay follow-up: static official v5.1.1 binary/metadata and MIT CLI study
+recorded in BETTERDISPLAY-RESEARCH.md. Prioritize favourite scaling shortcuts,
+clear provider status and opt-in recovery. Private-API scaling/HDR/virtual-screen
+leads remain separate experiments, not verified M8 unlocks.
 
-## Phase 2 — deliver v3
+Current priority: finish advanced HiDPI scaling and richer audio end to end.
+Studio and the menu now share one integrated EQ model. New source provides a
+native-first fine-size picker, an explicit virtual HiDPI fallback, reconnect
+review, control-provider status and physical text-size suggestions. The M80B
+virtual path passed live 2560/2400-width tests, timed and explicit return, and
+user picture acceptance. Native-first timeout, quick-menu Keep/Return and
+forced-host-close restoration also passed. Live 48 kHz audio, applied night mode,
+shared quick presets and late-companion shutdown passed in the isolated host.
+Next: clean candidate verification and controlled delivery. New sound source adds per-output
+EQ, balance, mono, channel trims and optional night compression; synthetic/DSP
+checks do not replace a live capture journey. Preserve accepted installed apps
+until controlled update. Full BetterDisplay feature parity, native model
+editing, virtual HDR/streaming and measured calibration are not established.
 
-- Improve hotkey troubleshooting so permission state, recognized media events, routing readiness and actual command delivery are distinguishable without recording typed text. Preserve normal Mac behavior for unrelated outputs.
-- Make Samsung audio/display targeting explicit and durable. Recognize supported display audio routes carefully and avoid controlling the wrong monitor when several outputs exist.
-- Improve connection lifecycle and idle behavior across screen sleep/wake, disconnect/reconnect and inactive output routes. Prefer notifications, coalescing and bounded retries to frequent polling.
-- Make diagnostics safer to share by default; keep private addresses, MACs, display identities, pairing tokens and personal ICC data out of public reports and releases.
-- Refine color/scaling/audio setup around actual device capabilities. Keep original ColorSync profiles recoverable. Do not advertise unsupported HDR, Dolby Atmos or unmeasured calibration quality.
-- Audit interface, accessibility, keyboard, recovery, compatibility, performance, privacy and maintainability against concrete checks. Continue the substantive-improvement ledger with implementation/test evidence.
-- Run appropriate policy, native UI and integration regressions, inspect the result, install v3 in Applications, preserve a recovery archive, publish sanitized source and a downloadable GitHub release, and verify release integrity.
+Deliver and install an excellent native macOS monitor utility for the user's
+Samsung M80B, with Ukrainian by default and equivalent English support. Finish
+and test v5 end to end before updating the public GitHub source and release.
+Preserve working native volume keys and accepted Bass + sound during development.
+The version number is not a substitute for the completion gates below.
 
-## Completion gates
+## Requirements and acceptance
 
-1. The implemented v2/v3 software scope builds from a clean public checkout and CI passes.
-2. Policy and feasible native UI/integration checks pass; hardware-dependent tests are explicitly passed, failed or skipped with their reason.
-3. Ukrainian and English controls render and behave correctly, including compact menu, scenes, recovery and settings.
-4. Installed app and distributed archives are verified, source/release links resolve, and previous working builds are retained.
-5. No unavailable capability, measured color/acoustic accuracy, battery improvement or perfect audit score is claimed without evidence.
+| Workstream | Required result | Acceptance and remaining work |
+| --- | --- | --- |
+| Interface and menu | Beautiful, coherent native Studio, compact quick controls, clear feedback, useful empty states, accessible labels/focus, light/dark and reduced motion | Setup navigation and summary label/value pairs were verified through CUA in UK/EN. Complete actual menu/desktop keyboard and accessibility journeys; fix observed usability defects. Spoken VoiceOver remains unverified. |
+| Setup and portability | Guided first launch, easy monitor connection, skippable optional permissions, remembered per-display preferences and recovery | Five stages implemented; 24 local layout/state checks passed. Real fresh-Mac permissions/connection still needs acceptance. Never change mode/profile/output just by finishing Setup. |
+| Native keys | Standard Mac volume/mute controls the selected Samsung speakers; normal Mac-speaker behavior after disconnect. Improve brightness keys and usable fallback shortcuts | User physically accepted volume/mute and disconnected fallback. Preserve that evidence; no repetition absent a new failure. Reboot/dock/update continuity remain. |
+| Brightness | Smooth fine/coarse software dimming, quick presets/reset, optional linked screens; real backlight control only where verified | Existing dimming and capability-gated hardware controls remain. Resolve Samsung's vendor DDC discovery lead with bounded read-only investigation before any opt-in write experiment. Do not equate dimming with backlight power reduction. |
+| Picture and scaling | Best supported text clarity, HiDPI/render-size/refresh choices, model/cable guidance, HDR only on a verified compatible path | Report actual macOS modes, preserve fractional refresh, timed independent rollback and per-monitor selection. Verify connected-M8 restoration and relevant HDMI/USB-C paths; do not invent physical refresh/HDR capabilities. |
+| Color | Preserve original profile; built-in useful reference descriptions, panel-scoped ICC import/selection/undo and calibration provenance | Wrong-panel imports are rejected. Professionally measured accuracy requires this unit's instrument measurements; generic/vendor/M9 profiles must not be labeled calibrated. A correct profile also depends on picture mode/white balance/luminance conditions. |
+| Sound | Real useful presets including bass enhancement, editable EQ, headroom/protection, bypass, route safety, native key control and honest format information | Accepted separate companion has four presets/eight bands, 43 DSP checks and live M80B PCM evidence. User accepted Bass +. Source now has 87 route/policy checks and 21 Address Sanitizer buffer checks. Complete start/stop/apply/output/sleep/long-session recovery coverage. No invented codec or physical bass extension. |
+| Atmos and immersive sound | Investigate monitor Atmos effect, state/control and a compatible encoded playback path; Apple spatial sound only where actually supported | User confirms Atmos menu exists. Enabled state, remote command and encoded Mac playback remain unknown. Stereo EQ is not an Atmos decoder. Hide unavailable controls. |
+| Desktop and widgets | Useful interactive desktop card plus the requested native WidgetKit integration where implementable | App-owned card exists; it is not WidgetKit. Native card show/pin/hide/reopen/focus and the user-reported medium preview widget/Sound link passed. Production navigation-widget packaging is implemented; production registration/gallery acceptance remains. Do not silently count the card as completion of the gallery request. |
+| Samsung compatibility and research | Capability-driven M7/M8/M9 and useful S-series support; learn from official software, drivers, firmware and licensed open repos | Maintain version/hash/source/compatibility/experiment matrix. Inspect actual interfaces, not branding assumptions. No opaque installers/firmware execution, cross-model flashing or calibration transfer. Other models need their own hardware evidence. |
+| Hardware identity and experiments | Identify exact panel/main-board/audio components where evidence permits, then test genuinely supported features | User label: S32BM801UI / LS32BM801UIXUA / Type S32BM801U / CA01. Factory configuration 32S6AUNEB is a distinct field. Exact fitted LCD/audio-chip mapping remains unknown. No speculative decoding or service-menu changes. |
+| Reliability and consumption | Bounded reconnection, low idle work, coalesced events, safe sleep/wake/unplug/replug, failure recovery and stable preferences | Existing adaptive polling and route teardown verified in specific checks. Complete adverse-state matrix, longer runs and repeatable CPU/memory/wakeup observations; no unsupported battery claims. |
+| Audit and 100 improvements | Maintain a substantive change ledger and audit UX, design, accessibility, features, reliability, performance, privacy, image, sound and distribution | Existing 100-entry ledger is an inventory, not proof of 100 successful live tests. Reconcile it with code and evidence. Record pass/fail/not-tested per criterion; do not invent perfect scores. |
+| Local install and public delivery | Usable saved app in Applications, rollback/recovery, source/build reproducibility, verified ZIP/checksum/signature, GitHub updated after E2E | User has no Developer ID membership. Prepare honest ad-hoc local delivery and permission recovery; no paid account requirement for local use. Notarization is unavailable. Preserve accepted apps until controlled update/rollback is concrete. |
 
-## External verification still needed
+## Phone-assisted color research — added 2026-10-24
 
-The M80B is now connected again; the latest Core Audio check reports a selected Samsung DisplayPort route with two channels at 48 kHz and 3840 × 2160 at 60 Hz. Native media-key access is now verified by an enabled event tap, and the user physically confirmed standard monitor volume/mute keys plus native Mac-speaker fallback after disconnect. Final paired navigation, reboot/dock behavior, other Samsung hardware, HDMI HDR, instrument color calibration and acoustic measurements remain separate gates. Developer ID signing/notarization needs an available signing identity.
+Investigate the user's Apple TV/iPhone Color Balance idea. Prioritize Samsung's
+supported Smart Calibration path: official Samsung guidance lists Basic Mode for
+Smart Monitor M70B and higher with compatible iPhones, but availability on this
+regional M80B, picture mode and Mac input still needs direct confirmation.
+Apple's feature corrects Apple TV output; do not claim it supplies a Mac ICC or
+changes every source. No documented public third-party entry point was found in
+the initial Apple documentation search. A custom phone-assisted workflow remains
+an experiment until repeatability and independent instrument comparison establish
+accuracy. Geometric camera calibration data is not a display colorimeter profile.
+Keep exposure/processing, panel spectral response, viewing angle, ambient light,
+picture mode and per-input applicability in the validation plan. No automatic
+ICC/gamma/white-balance application from unvalidated phone readings.
 
-## Tracker limitation
+## Execution order
 
-The thread goal tracker retains an older unfinished usage-limited goal and rejects replacement objectives. That goal has not been falsely marked complete. This versioned roadmap records the user-authorized expanded scope while implementation continues.
+1. Close observed native interaction defects: foreground desktop presentation,
+   pin/hide/reopen, menu Controls/Scenes and keyboard focus, UK/EN equivalence.
+2. Finish sound lifecycle and connected-monitor picture/profile/reconnection
+   acceptance, using safe tests that restore state. Continue useful offline work
+   when hardware or an unlocked UI session is unavailable.
+3. Implement compatible high-value research findings and WidgetKit integration;
+   retain a separate experimental boundary and recovery path for unverified work.
+4. Reconcile the feature/audit/improvement ledger against actual source and test
+   evidence. Fix release-blocking defects before adding lower-priority scope.
 
-## Image-quality expansion requested 2026-10-22
+5. Build a clean sanitized v5 candidate; complete local end-to-end tests and
+   controlled Applications update with verified rollback/permission recovery.
+6. Only after that E2E gate, update GitHub source and release, verify remote CI,
+   tree parity, public download checksum and extracted signature, and record the
+   delivered version. Do not publish interim increments; user explicitly set this
+   order on 2026-10-24.
 
-Research and implement the best supported scaling and image-quality setup for each connected Samsung M7/M8/M9 generation. Add meaningful HiDPI/render-size/refresh comparisons and safe previews, model-specific connection guidance (including PC input naming, USB-C bandwidth preference, HDMI Input Signal Plus and RGB/chroma checks), panel-scoped professional ICC imports and calibration provenance. Study shared community techniques against primary documentation. Keep experimental techniques opt-in and recoverable; separate unverified EDID/virtual-display/HDR experiments from working controls. Never substitute another panel's ICC or OLED settings for measured calibration of the actual display.
+Audio lifecycle checkpoint (2026-10-24): stale-result cancellation and startup
+route revalidation are implemented; 21 synthetic controller checks also pass
+under Thread Sanitizer, alongside 43 DSP checks and a verified companion build.
+A separate synthetic preview verified native window startup cancellation and
+UK/EN recovery messages; the sound menu and real hardware recovery matrix remain
+open. This does not close the long-session gate.
 
-## v5 expansion — sound, desktop and portable Samsung features
+Menu checkpoint (2026-10-24): explicit page focus, UK/EN arrow switching,
+Command-Return to Studio, Escape and reopening focus passed native isolated checks.
+Full button traversal with macOS Keyboard Navigation and spoken VoiceOver remain
+open. Sound's shared native app menu passed synthetic preset/start/bypass and
+Command-period checks; one-window reuse and corrected UK/EN guidance were observed.
+The MenuBarExtra anchor and a real close/reopen cycle still need verification.
 
-User-requested target: v5. Earlier v2/v3 gates remain prerequisites, rather than being bypassed by a version-number change.
+Widget checkpoint (2026-10-24): a sandboxed WidgetKit navigation prototype now
+builds and embeds in the isolated preview; PlugInKit registration was observed.
+Small/medium UK/EN variants use allowlisted navigation links, not live readings
+or inline hardware controls. The host's URL parser is tested in both identities.
+The user confirms native gallery discovery, correct medium preview rendering and Sound-link navigation; other sizes/locales and production embedding remain unverified. The temp host claimed the scheme
+but had no Launch Services handler; a dedicated non-temp AppSupport preview
+location resolved handler lookup and warm Safari Color/quick navigation passed.
+This is host URL evidence, not native widget click-through. See Widget/README.md. Keep production embedding, live widget
+state/controls and native acceptance open; the desktop card is still separate.
 
-- Inspect official M9 monitor installer data and compare it with M8 capabilities. Publish reproducible findings; transfer only compatible behavior. Never flash M9 firmware or assign M9 OLED profiles to an M8.
-- Add a native interactive desktop control card sharing the app’s live state, with brightness, capability-gated volume, scene preview and recovery. Preserve normal window use, provide hide/pin controls, avoid a second polling engine. Native WidgetKit gallery integration remains a separate milestone requiring extension packaging and actual registration testing.
-- Build sound setup around verified output routing, channel checks, comfortable level, reversible listening comparisons and monitor-side settings. System-wide equalization needs an independently validated audio-processing path; do not expose decorative EQ sliders or promise Atmos from a stereo PCM route.
-- Complete model-aware scaling/color guidance, safe mode previews, panel-scoped calibration imports, new-Mac setup and accessibility checks.
-- Validate and install each stable increment; v5 is complete only when the declared scope, public build/release and feasible hardware checks meet the completion gates.
+## Release completion gates
 
-## Verified development increment, 2026-10-22
+- Required software work above is implemented and usable; missing requested work
+  is explicitly unresolved, not silently removed or called complete.
+- UK/EN native interactions and meaningful regression/integration tests pass;
+  release-blocking failures are fixed and adverse-state results are recorded.
+- The installed update, rollback copy, native keys and sound route behavior are
+  verified. A source build or isolated preview alone is not installed acceptance.
+- Public source/release matches the tested implementation, CI passes and the
+  downloadable artifact verifies. No private diagnostics, EDID/serials, pairing
+  credentials, personal ICC files or proprietary vendor assets are published.
+- Hardware/instrument-dependent results are clearly scoped: untested other-model
+  hardware, acoustic/color measurements and encoded Atmos cannot receive assumed
+  passes. A complete local software release must not claim those unknowns solved.
 
-Implemented compact menu redesign, native desktop card, M80B HDMI identity fix, separate M9 identities, fractional-refresh scaling explorer, panel-scoped imports and sound/spatial setup guidance. Latest automated evidence: 75 policy checks; seven internally dispatched Carbon callbacks; 12 native menu layouts; eight desktop layout/lifecycle checks; 10 quality/profile/legacy scene checks; 23 connected-display scene/recovery checks. User confirms the M8 Atmos menu is present. Its enabled state, remotely writable command and actual Mac Atmos playback are unverified. The working build is 3.0.0 development; v5 has not been declared complete.
+## Accepted baseline to preserve
 
-## Native key milestone verified
+- Installed M8 Studio: 3.0.0 development, native monitor volume/mute and unplugged
+  Mac-speaker fallback physically accepted by the user. Executable SHA256:
+  `d5df99c03f8b267cd9ecff90dfe3eab8af6ae90a0a9459cc56f44d6422e87710`.
+- Installed Sound companion: 0.1.0, Bass + listening accepted as fuller/less harsh,
+  live M80B 48 kHz stereo PCM verified. Executable SHA256:
+  `efad6a81af68febc3bc82d30dc6a178b7e73cfcdd44d15fe146d7a61a12a0d71`.
+- Working installed apps are frozen during independent development. Future ad-hoc
+  builds may require macOS permission repair; do not weaken TCC/SIP or pretend
+  ad-hoc updates guarantee permission continuity.
+- Existing public sound beta and draft PR remain historical development outputs;
+  full v5 is not released. Latest local-only work has not been published.
 
-2026-10-22: standard volume up/down and mute work with the connected M8; after disconnect, native Mac-speaker volume keys work normally. User physically confirmed both tests. CGGetEventTapList independently confirmed an enabled tap owned by the unchanged installed build. Preserve that working build while continuing v5 in the workspace.
+## Evidence and continuation
 
-## Sound processing increment accepted, 2026-10-23
+Use AUDIT-v5.md, Sound/README.md, SAMSUNG-DRIVER-FINDINGS.md and
+SAMSUNG-SOFTWARE-FIRMWARE-RESEARCH.md for public-safe evidence. Private checkpoints,
+exact device data and the 100-refinement inventory remain under Research/.
+The previous four-hour automation is absent (the app rejected an update because
+it no longer exists). Do not claim scheduled continuation or silently recreate
+a possibly user-deleted automation. The thread goal API retains an older
+unfinished objective and cannot replace its text; this versioned roadmap is the
+consolidated current scope. Never falsely complete the old goal to rename it.
 
-M8 Studio Sound 0.1.0 is installed separately in Applications. Four presets, eight
-editable bands, a 50 Hz high-pass, automatic headroom, linked peak protection,
-menu-bar actions, native bypass and route/sleep teardown are implemented. Numerical
-DSP suite: 43 PASS. Live M80B 48 kHz stereo PCM processing was verified with a quiet
-generated signal. The user reports Bass + sounds fuller and less harsh with
-familiar music. Ukrainian and English interface, preset edits and persisted
-manual values were inspected. This is subjective acceptance, not measured acoustic
-calibration. The working main app and its native-key executable remain unchanged.
-A subsequent native Mac-speaker route check showed EQ off and Enable disabled.
 
-Sound source and the sound-only beta are now published; both named push/PR CI builds passed. Next: test longer sessions and recovery when the monitor is available, and complete onboarding/distribution/signing gates.
-
-## Guided setup development, 2026-10-23
-
-A five-step setup journey now covers display selection, reported HiDPI modes and
-profile provenance, sound routing/EQ, optional media keys and a live summary. A
-fresh first launch opens Setup; existing users can reopen it from the sidebar.
-Stages can be skipped and language changes retain progress. Settings change only
-through explicit actions; finishing cannot accept a pending mode preview and does
-not apply a mode, ICC, audio route or preset. Validation no longer registers a
-media-key tap or global shortcuts in the main app's diagnostic/UI harnesses.
-
-Local evidence: 24 PASS — 20 UK/EN/light/dark stage layouts plus pending-preview,
-successful completion, hardware-state preservation and no-tap checks. Policy
-regression: 75 PASS; seven internal Carbon callbacks passed. Native screenshots
-were inspected, including a fixed language-picker truncation. The
-trusted installed main app and accepted sound companion remain unchanged. Real
-fresh-Mac permission/connection journeys and dock/reboot coverage remain gates.
-
-The guided-setup source at 7e0d0de passed both public CI runs 39978634938 and
-39978629517. Accessibility work continues in the workspace: heading semantics,
-combined summary rows and Return bindings are added; a real assistive-technology
-and keyboard interaction journey remains unverified. No installed app was replaced.
+Advanced implementation checkpoint (2026-10-25): actual M80B virtual mirror
+2560×1440/5120×2880 and 2400×1350/4800×2700 at 60 Hz verified. User accepts
+picture/text without flicker. Timed return and Keep/Return restore exact physical
+mode, origins, mirrors, profiles and audio snapshot. A fresh configurator process
+fixes creator-process CoreGraphics mode-cache failure. Native model overrides
+are not implemented by this fallback. New controls have 65 DSP, 52 actual-model
+(TSan also passed), 25 display-assistance and 19 virtual-policy checks. See
+AUDIT-v5.md for limits and remaining live/new-build acceptance. No interim GitHub
+publication or accepted Applications replacement has occurred.

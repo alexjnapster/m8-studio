@@ -2,7 +2,30 @@
 
 Нативний застосунок у смузі меню macOS для керування екранами Samsung. Українська за замовчуванням; English доступна в налаштуваннях.
 
-A native SwiftUI/AppKit menu-bar utility for Samsung displays. Built for Apple silicon and macOS 14 or later. The published beta is 2.1.0. Current working source targets the v5 roadmap and is a development build, signed locally without Developer ID notarization.
+A native SwiftUI/AppKit menu-bar utility for Samsung displays. Built for Apple silicon and macOS 14.2 or later. The published beta is 2.1.0. Current working source targets the v5 roadmap and is a development build, signed locally without Developer ID notarization.
+
+## Latest development update — 2026-10-25
+
+The `v5-development` branch now includes integrated Sound Studio and quick-menu
+EQ, balance, mono, channel trims, linked night compression and per-output settings.
+Native HiDPI modes are preferred; an opt-in M80B virtual SDR canvas adds finer
+sizes with an independent timeout/recovery host. Favourite modes, explicit
+reconnect recovery and estimated physical text-size matching are also available.
+The navigation-only WidgetKit extension is packaged with the main app.
+
+Connected-M8 tests verified 48 kHz PCM processing, shared quick-menu presets,
+late-companion shutdown, native-first scaling, 2400 × 1350 virtual HiDPI,
+timeout/Keep/Return and recovery after the isolated host was force-closed. The
+user accepted the virtual picture/text check. The clean candidate passed 65 DSP,
+63 sound-model, 21 lifecycle, 21 buffer, 25 display-assistance and 19 canvas-policy
+checks, plus the existing keyboard/route/favourite checks and extracted signatures.
+
+This is development source, not completed v5 or an automatic installed update.
+Production widget-gallery acceptance, controlled installed permission migration,
+longer dock/reboot/recovery, HDR/Atmos and instrument-measured calibration remain
+open. See [audit](AUDIT-v5.md) and [roadmap](ROADMAP.md). Ad-hoc signing is not
+Developer ID notarization. Keep the older Sound companion off while enabling the
+integrated processor; reopening it stops integrated processing.
 
 ## Features
 
@@ -68,11 +91,13 @@ Desktop controls (menu → More actions → Desktop controls), a HiDPI scaling e
 
 ## Sound presets and adjustable EQ
 
-The optional [M8 Studio Sound module](Sound/README.md) provides Warmth, Bass +,
+The integrated [Sound Studio](Sound/README.md) provides Warmth, Bass +,
 Clear voices and eight editable EQ bands with automatic headroom, linked peak
-protection and true bypass. Build with `zsh build-sound.sh`; install the resulting
-companion in Applications. It runs independently to preserve existing media-key
-permission. It processes stereo PCM locally, without audio recordings or uploads.
+protection and true bypass. The main Sound page, Setup and menu-bar Sound tab
+share one engine and settings. No companion launch is needed in the current
+workspace build. The previously accepted standalone companion remains installed
+until controlled v5 migration; quit it before enabling integrated EQ. Processing
+is stereo PCM and local, without recordings or uploads.
 The M80B listening test was accepted as fuller and less harsh with Bass +; presets
 are not instrument-measured speaker/room calibration. Run `python3 Tests/test-sound.py`
 for the DSP numerical checks.

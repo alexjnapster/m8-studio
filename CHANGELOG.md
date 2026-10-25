@@ -1,3 +1,34 @@
+## Unified scaling, audio and widget development — 2026-10-25
+
+- Integrate the sound engine and presets into Studio and the shared quick menu.
+- Add per-output balance, mono, attenuation trims and optional linked night compression.
+- Stop integrated capture when the legacy companion opens, including pending startup.
+- Prefer reported native HiDPI modes, with an explicit M80B virtual SDR fallback,
+  independent preview timeout, Keep/Return and parent-close recovery.
+- Add favourite modes, estimated text-size matching, provider status and explicit
+  saved mode/profile review on reconnection.
+- Package a sandbox-only navigation WidgetKit extension; production gallery and
+  controlled installed update acceptance remain open.
+- Record connected-M8 tests, 65 DSP and 63 model checks, and verified clean packages.
+  This development update does not declare full v5 completion or measured calibration.
+
+## Render-buffer checks — unreleased, 2026-10-24
+
+- Add 21 Address Sanitizer checks of actual audio-buffer helpers using synthetic
+  memory, including channel order, capacity bounds, silence and tap-input isolation.
+- Prepare a dedicated CI step. No production audio code or installed app changed;
+  native setup interaction still awaits an unlocked session.
+
+## Sound routing hardening — unreleased, 2026-10-24
+
+- Require HDMI/DisplayPort transport for sound EQ, sharing the main app's Samsung
+  audio policy. Samsung Bluetooth/USB headsets and wireless/unknown transports
+  can no longer qualify from their brand name alone.
+- Accept model/manufacturer-named Samsung display routes with valid stereo PCM,
+  a usable endpoint identity and finite positive sample rate.
+- Add 12 routing regressions; the combined policy suite now passes 87 checks.
+  Workspace sound build verifies; accepted installed binaries are preserved.
+
 ## Guided setup development, 2026-10-23
 
 - Add a repeatable five-step UK/EN journey for displays, picture/color, sound,
