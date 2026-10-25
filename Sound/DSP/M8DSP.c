@@ -10,6 +10,8 @@
 struct Filter { double b0,b1,b2,a1,a2,z1[2],z2[2]; };
 struct M8DSP {
     struct Filter f[BANDS]; double attenuation, headroom, release, gain;
+    double channelGain[2], compressionGain, compAttack, compRelease;
+    int mono, nightMode;
     float delay[DELAY][2]; int lookahead; uint64_t cursor;
     double maxima[DELAY]; uint64_t positions[DELAY]; int front, back;
     _Atomic(uint64_t) frames; _Atomic(float) peak, reduction;
@@ -23,6 +25,11 @@ static struct Filter coefficients(double rate,double frequency,double gain,int h
     return f;
 }
 M8DSP *m8_create(double rate,const double gains[8]) {
+    return m8_create_with_options(rate,gains,0,0,0,0,0);
+}
+M8DSP *m8_create_with_options(double rate,const double gains[8],double balance,int mono,double leftTrim,double rightTrim,int nightMode) {
+    if(!isfinite(balance)||fabs(balance)>1||!isfinite(leftTrim)||!isfinite(rightTrim)||leftTrim>0||rightTrim>0||leftTrim< -12||rightTrim< -12||
+       (mono!=0&&mono!=1)||(nightMode!=0&&nightMode!=1)) return NULL;
     if(!isfinite(rate)||rate<32000||rate>192000||!gains) return NULL;
     for(int i=0;i<8;i++) if(!isfinite(gains[i])||fabs(gains[i])>6) return NULL;
     M8DSP *d=calloc(1,sizeof(*d)); if(!d) return NULL;
@@ -37,6 +44,10 @@ M8DSP *m8_create(double rate,const double gains[8]) {
         double db=20*log10(fmax(1e-15,cabs(response))); if(db>maximum) maximum=db;
     }
     d->headroom=maximum+1.5; d->attenuation=pow(10,-d->headroom/20);
+    d->channelGain[0]=pow(10,leftTrim/20)*(balance>0 ? 1-balance:1);
+    d->channelGain[1]=pow(10,rightTrim/20)*(balance<0 ? 1+balance:1);
+    d->mono=mono; d->nightMode=nightMode; d->compressionGain=1;
+    d->compAttack=exp(-1/(rate*0.010)); d->compRelease=exp(-1/(rate*0.250));
     d->gain=1; d->release=exp(-1/(rate*0.12)); d->lookahead=(int)(rate*0.005);
     return d;
 }
@@ -57,6 +68,17 @@ void m8_process(M8DSP *d,float *samples,int frames) {
                 f->z1[ch]=f->b1*x-f->a1*y+f->z2[ch]; f->z2[ch]=f->b2*x-f->a2*y; x=y;
             }
             value[ch]=x*d->attenuation;
+        }
+        if(d->mono) { double average=(value[0]+value[1])*0.5; value[0]=average; value[1]=average; }
+        for(int ch=0;ch<2;ch++) value[ch]*=d->channelGain[ch];
+        if(d->nightMode) {
+            // Linked 3:1 compression above -24 dBFS, 10 ms attack / 250 ms release.
+            // No makeup gain: this reduces peaks, never automatically raises level.
+            double inputPeak=fmax(fabs(value[0]),fabs(value[1]));
+            double compTarget=inputPeak>0.06309573445 ? pow(inputPeak/0.06309573445,-2.0/3.0):1;
+            double smooth=compTarget<d->compressionGain ? d->compAttack:d->compRelease;
+            d->compressionGain=compTarget+(d->compressionGain-compTarget)*smooth;
+            for(int ch=0;ch<2;ch++) value[ch]*=d->compressionGain;
         }
         double peak=fmax(fabs(value[0]),fabs(value[1]));
         uint64_t cursor=d->cursor++;
