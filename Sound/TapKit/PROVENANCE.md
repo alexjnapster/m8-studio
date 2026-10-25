@@ -10,3 +10,6 @@ assets or dependencies included.
 
 The M8 DSP is original code using the published RBJ coefficient equations:
 https://www.w3.org/TR/audio-eq-cookbook/
+
+Integrated main-app builds use their own tap/aggregate/log namespace; the legacy
+companion namespace is preserved. Both compile the same licensed capture source.
