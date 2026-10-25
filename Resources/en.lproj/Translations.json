@@ -511,5 +511,6 @@
   "Media keys are optional. You can use the menu and global shortcuts too.": "Media keys are optional. You can use the menu and global shortcuts too.",
   "Explore reported display modes with timed recovery.": "Explore reported display modes with timed recovery.",
   "Your overview": "Your overview",
-  "Installed": "Installed"
+  "Installed": "Installed",
+  "Disabled": "Disabled"
 }
