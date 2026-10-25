@@ -32,8 +32,11 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
 }
 @MainActor final class DeskModel: ObservableObject {
     let hardware: Hardware; let remote: SamsungRemote
+    let sound = SoundModel()
     let colors = ColorProfiles(); let keyboard = DeskKeyboard()
-    @Published var language = AppLanguage.current { didSet { AppLanguage.current = language } }
+    let canvasRecovery = CanvasRecovery()
+    let virtualCanvas = VirtualCanvasController()
+    @Published var language = AppLanguage.current { didSet { AppLanguage.current = language; sound.english = language == "en" } }
     @Published var section: DeskSection = .overview
     @Published var setupStage: SetupStage = .display
     @Published var scenes: [DeskScene] = []
@@ -81,9 +84,13 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
     private var readBrightness: ReadBrightness?
     init(hardware: Hardware, remote: SamsungRemote) {
         self.hardware = hardware; self.remote = remote
-        for publisher in [hardware.objectWillChange.eraseToAnyPublisher(), remote.objectWillChange.eraseToAnyPublisher(), colors.objectWillChange.eraseToAnyPublisher(), keyboard.objectWillChange.eraseToAnyPublisher()] { publisher.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subscriptions) }
+        sound.english = language == "en"
+        for publisher in [virtualCanvas.objectWillChange.eraseToAnyPublisher(), canvasRecovery.objectWillChange.eraseToAnyPublisher(), sound.objectWillChange.eraseToAnyPublisher(), hardware.objectWillChange.eraseToAnyPublisher(), remote.objectWillChange.eraseToAnyPublisher(), colors.objectWillChange.eraseToAnyPublisher(), keyboard.objectWillChange.eraseToAnyPublisher()] { publisher.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subscriptions) }
         if let data = UserDefaults.standard.data(forKey: "deskScenes"), let stored = try? JSONDecoder().decode([DeskScene].self, from: data) { scenes = stored.filter(\.valid) }
         colors.refresh(hardware.selected)
+        canvasRecovery.updateConnections(hardware.connectedUUIDs)
+        hardware.$connectedUUIDs.dropFirst().removeDuplicates()
+            .sink { [weak self] connected in self?.canvasRecovery.updateConnections(connected) }.store(in:&subscriptions)
         hardware.$selected.dropFirst().removeDuplicates().sink { [weak self] id in self?.colors.refresh(id) }.store(in: &subscriptions)
         keyboard.onCommand = { [weak self] command, fine in self?.handle(command, fine: fine) }
         keyboard.shouldHandle = { [weak self] command in
@@ -107,6 +114,9 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
         }
     }
     private func connectVolumeIfNeeded() {
+        #if M8_UI_PREVIEW
+        return // Preview navigation must not schedule hardware changes or connect.
+        #endif
         guard !CommandLine.arguments.contains(where:{$0.hasPrefix("--validate") || $0 == "--diagnose"}),
               samsungIsOutput, !remote.mediaAvailable, !remote.busy, !remote.connected,
               localHost(remote.host), Date().timeIntervalSince(lastMediaConnect) > 20 else { return }
@@ -138,7 +148,36 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
         return display.modes.filter { abs(Double($0.width)/Double($0.height)-aspect) < 0.02 && (!isM8 || ($0.refreshRate >= 59 && $0.refreshRate <= 61)) }
     }
     func mode(_ width: Int, hiDPI: Bool = true) -> CGDisplayMode? { activeModes.filter { $0.width == width && (hiDPI ? $0.pixelWidth > $0.width : $0.pixelWidth == $0.width) }.min { abs($0.refreshRate-(hardware.current?.mode?.refreshRate ?? 60)) < abs($1.refreshRate-(hardware.current?.mode?.refreshRate ?? 60)) } }
-    func selectDisplay(_ id: CGDirectDisplayID) { hardware.select(id); colors.refresh(id); activeScene = nil; renamedFromDevice(); announce("Selected \(displayName)") }
+    var favoriteEligibleModes: [CGDisplayMode] {
+        (hardware.current?.modes ?? []).filter { !isM8 || $0.refreshRate <= 60.5 }
+    }
+    private var modeFavorites: DisplayModeFavorites { DisplayModeFavorites(defaults:.standard) }
+    private func favoriteDisplayModes(in available:[CGDisplayMode]) -> [CGDisplayMode] {
+        guard let uuid = hardware.current?.uuid else { return [] }
+        return modeFavorites.modes(for:uuid).compactMap { saved in available.first { saved.matches(FavoriteDisplayMode($0)) } }
+    }
+    var favoriteDisplayModes: [CGDisplayMode] { favoriteDisplayModes(in:favoriteEligibleModes) }
+    func modeIsFavorite(_ mode:CGDisplayMode) -> Bool {
+        guard let uuid = hardware.current?.uuid else { return false }
+        return modeFavorites.modes(for:uuid).contains { $0.matches(FavoriteDisplayMode(mode)) }
+    }
+    func toggleModeFavorite(_ mode:CGDisplayMode) {
+        guard let uuid = hardware.current?.uuid, favoriteEligibleModes.contains(where:{$0.ioDisplayModeID == mode.ioDisplayModeID}) else { return }
+        objectWillChange.send()
+        if !modeFavorites.toggle(FavoriteDisplayMode(mode),for:uuid) { announce("Save up to eight favorite display modes per screen.") }
+    }
+    var quickDisplayModes: [CGDisplayMode] {
+        let reported = favoriteEligibleModes
+        let aspect = hardware.current?.mode.map { Double($0.width)/Double($0.height) } ?? 16.0/9.0
+        let available = reported.filter { abs(Double($0.width)/Double($0.height)-aspect) < 0.02 && (!isM8 || $0.refreshRate >= 59) }
+        let preferred = favoriteDisplayModes(in:reported) + [(1920,true),(2560,true),(3840,false)].compactMap { width,hiDPI in
+            available.filter { $0.width == width && (hiDPI ? $0.pixelWidth > $0.width:$0.pixelWidth == $0.width) }
+                .min { abs($0.refreshRate-(hardware.current?.mode?.refreshRate ?? 60)) < abs($1.refreshRate-(hardware.current?.mode?.refreshRate ?? 60)) }
+        }
+        var seen = Set<Int32>()
+        return Array((preferred.isEmpty ? available:preferred).filter { seen.insert($0.ioDisplayModeID).inserted }.prefix(8))
+    }
+    func selectDisplay(_ id: CGDirectDisplayID) { if virtualCanvas.engaged { virtualCanvas.stop() }; hardware.select(id); colors.refresh(id); activeScene = nil; renamedFromDevice(); announce("Selected \(displayName)") }
     func renamedFromDevice() { rename = displayName }
     func renameDisplay() { guard let uuid = hardware.current?.uuid else { return }; let name = String(rename.trimmingCharacters(in: .whitespacesAndNewlines).prefix(48)); UserDefaults.standard.set(name.isEmpty ? nil : name, forKey: "name.\(uuid)"); objectWillChange.send(); announce("Display name saved") }
     func setBrightness(_ value: Double, manual: Bool = true) {
@@ -185,13 +224,13 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
     }
     var volumePending:Bool { volumeWorker != nil }
 
-    func restore() { followMac = false; followingBaseline = nil; scheduledBaseline = nil; scheduleEnabled = false; UserDefaults.standard.set(false, forKey: "scheduleEnabled"); hardware.resetShades(); autoPausedUntil = nil; activeScene = nil; announce("All screens restored · experiments paused", icon: "sun.max.fill") }
+    func restore() { virtualCanvas.stop(); followMac = false; followingBaseline = nil; scheduledBaseline = nil; scheduleEnabled = false; UserDefaults.standard.set(false, forKey: "scheduleEnabled"); hardware.resetShades(); autoPausedUntil = nil; activeScene = nil; announce("All screens restored · experiments paused", icon: "sun.max.fill") }
     func announce(_ text: String, icon: String = "checkmark.circle.fill") {
         toastTask?.cancel(); toast = text; activity.insert(ActivityItem(text:text), at: 0); if activity.count > 40 { activity.removeLast(activity.count-40) }
         toastTask = Task { try? await Task.sleep(for: .seconds(4)); if !Task.isCancelled { toast = "" } }
     }
     func refresh() { hardware.refresh(); colors.refresh(hardware.selected); announce("Desk refreshed") }
-    func applyMode(_ mode: CGDisplayMode) { hardware.applyMode(mode); activeScene = nil; announce("Previewing \(modeLabel(mode))") }
+    func applyMode(_ mode: CGDisplayMode) { if virtualCanvas.engaged { announce("Return to the physical display before changing native modes."); return }; guard hardware.current?.mode?.ioDisplayModeID != mode.ioDisplayModeID else { return }; hardware.applyMode(mode); activeScene = nil; announce(hardware.rollbackSeconds > 0 ? "Previewing \(modeLabel(mode))":hardware.notice) }
     func capture(name: String = "My scene") -> DeskScene { DeskScene(name:name,icon:"slider.horizontal.3",displayUUID:hardware.current?.uuid ?? "",mode:hardware.current?.mode.map(ModeChoice.init),brightness:hardware.dim,volume:samsungIsOutput ? remote.volume : nil) }
     func persistAppearance() { UserDefaults.standard.set(appearance,forKey:"appearance"); UserDefaults.standard.set(compactLabels,forKey:"compactLabels") }
     var visibleScenes:[DeskScene] {
@@ -218,6 +257,7 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
         return true
     }
     func sceneIssue(_ scene:DeskScene)->String? {
+        if virtualCanvas.engaged { return "Return to the physical display before changing native modes." }
         guard scene.valid, scene.displayUUID == hardware.current?.uuid else { return "Select the display this scene belongs to" }
         guard hardware.rollbackSeconds == 0 else { return "Keep or revert the current display preview first" }
         if let desired = scene.mode, desired != hardware.current?.mode.map(ModeChoice.init), !activeModes.contains(where:{desired.matches($0)}) { return "This scene’s saved display mode is unavailable. No settings were changed." }
@@ -238,6 +278,7 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
         activeScene = scene.id; pendingScene = nil; announce("\(scene.localizedName) is ready")
     }
     func undoScene() {
+        guard !virtualCanvas.engaged else { announce("Return to the physical display before changing native modes."); return }
         guard let previous = previousSceneState else { return }
         guard previous.displayUUID == hardware.current?.uuid else { announce("Select the original scene’s display before undoing"); return }
         if let desired = previous.mode, desired != hardware.current?.mode.map(ModeChoice.init), !activeModes.contains(where:{desired.matches($0)}) { announce("This scene’s saved display mode is unavailable. No settings were changed."); return }
@@ -281,6 +322,9 @@ func scheduledPeriod(_ date: Date, start: Int, end: Int, calendar: Calendar = .c
         }
     }
     private func configurePolling() {
+        #if M8_UI_PREVIEW
+        return // Preview navigation must not schedule hardware changes or connect.
+        #endif
         scheduleTimer?.invalidate()
         let interval = deskPollingInterval(following: followMac, scheduled: scheduleEnabled)
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in Task { @MainActor in self?.tick() } }

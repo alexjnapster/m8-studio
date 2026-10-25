@@ -26,6 +26,12 @@ struct ScalingInspector:View {
                                         Text(LF("Render buffer: %@ × %@",[String(mode.pixelWidth),String(mode.pixelHeight)])).font(.caption2).foregroundStyle(.secondary)
                                     }
                                     Spacer()
+                                    Button { model.toggleModeFavorite(mode) } label: {
+                                        Image(systemName:model.modeIsFavorite(mode) ? "star.fill":"star")
+                                            .foregroundStyle(model.modeIsFavorite(mode) ? DeskStyle.brand:Color.secondary)
+                                    }.buttonStyle(.plain)
+                                    .accessibilityLabel(L(model.modeIsFavorite(mode) ? "Remove favorite display mode":"Favorite display mode") + " " + modeLabel(mode))
+                                    .help(L("Favorites appear in the quick menu"))
                                     if model.hardware.current?.mode?.ioDisplayModeID == mode.ioDisplayModeID { Image(systemName:"checkmark.circle.fill").foregroundStyle(DeskStyle.brand).accessibilityLabel(L("Current")) }
                                     else { Button(L("Preview")) { model.applyMode(mode) }.controlSize(.small).help(L("Preview for 15 seconds")).disabled(model.hardware.rollbackSeconds > 0) }
                                 }.padding(.vertical,10)

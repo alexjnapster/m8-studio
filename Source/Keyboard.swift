@@ -49,6 +49,9 @@ struct MediaKeyOwnership {
     private var source: CFRunLoopSource?
     private var permissionTimer: Timer?
     init() {
+        #if M8_UI_PREVIEW
+        return // Never acquire input ownership or request permission in a UI preview.
+        #endif
         guard !CommandLine.arguments.contains(where: { $0.hasPrefix("--validate") || $0 == "--diagnose" }) else { return }
         registerShortcuts(); refreshPermission(); updatePermissionTimer()
         activationObserver = NotificationCenter.default.addObserver(forName:NSApplication.didBecomeActiveNotification,object:nil,queue:.main) { [weak self] _ in Task { @MainActor in self?.refreshPermission() } }
@@ -64,6 +67,9 @@ struct MediaKeyOwnership {
         onCommand?(command, fine)
     }
     func registerShortcuts() {
+        #if M8_UI_PREVIEW
+        return // Never acquire input ownership or request permission in a UI preview.
+        #endif
         guard handler == nil else { return }
         var type = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         let callback: EventHandlerUPP = { _, event, context in
@@ -85,6 +91,9 @@ struct MediaKeyOwnership {
         shortcutStatus = hotkeys.count == keys.count ? "Global shortcuts ready" : "\(hotkeys.count) of \(keys.count) shortcuts registered; another app may use a shortcut."
     }
     func enableMedia() {
+        #if M8_UI_PREVIEW
+        return // Never acquire input ownership or request permission in a UI preview.
+        #endif
         mediaEnabled = true; UserDefaults.standard.set(true, forKey: "mediaKeys")
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options); refreshPermission(); updatePermissionTimer()
@@ -92,6 +101,9 @@ struct MediaKeyOwnership {
     }
     func disableMedia() { mediaEnabled = false; UserDefaults.standard.set(false, forKey: "mediaKeys"); stopTap(); mediaStatus = "Media keys are disabled"; updatePermissionTimer() }
     func refreshPermission() {
+        #if M8_UI_PREVIEW
+        return // Never acquire input ownership or request permission in a UI preview.
+        #endif
         guard mediaEnabled else { return }
         if let tap, !CFMachPortIsValid(tap) { stopTap() }
         if let tap { if !CGEvent.tapIsEnabled(tap:tap) { CGEvent.tapEnable(tap:tap,enable:true) }; return }

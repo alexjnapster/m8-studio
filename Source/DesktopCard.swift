@@ -3,16 +3,24 @@ import AppKit
 
 // A live app-owned desktop card. This is not a WidgetKit extension: it shares
 // the existing model and needs neither a second service nor timeline polling.
+@MainActor private final class DesktopCardPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+}
+
 @MainActor final class DesktopCardController: NSObject, NSWindowDelegate {
     let model: DeskModel
     private var panel: NSPanel?
+    private var presenting = false
     private var pinned = UserDefaults.standard.bool(forKey:"desktopCard.pinned")
     init(model: DeskModel) { self.model = model }
-    func toggle() { if panel?.isVisible == true { hide() } else { show() } }
-    func show() {
+    func toggle() {
+        if panel?.isVisible == true && (pinned || presenting) { hide() }
+        else { show(foreground:true) }
+    }
+    func show(foreground:Bool = false) {
         if panel == nil {
-            let window = NSPanel(contentRect:CGRect(x:100,y:120,width:330,height:430),styleMask:[.titled,.closable,.utilityWindow,.fullSizeContentView,.nonactivatingPanel],backing:.buffered,defer:false)
-            window.title = "M8 Studio"; window.titleVisibility = .hidden
+            let window = DesktopCardPanel(contentRect:CGRect(x:100,y:120,width:330,height:430),styleMask:[.titled,.closable,.utilityWindow,.fullSizeContentView,.nonactivatingPanel],backing:.buffered,defer:false)
+            window.title = L("Desktop controls"); window.titleVisibility = .hidden
             window.titlebarAppearsTransparent = true; window.isReleasedWhenClosed = false
             window.hidesOnDeactivate = false; window.isMovableByWindowBackground = true
             window.collectionBehavior = [.canJoinAllSpaces,.fullScreenAuxiliary]
@@ -25,13 +33,18 @@ import AppKit
             window.contentView = NSHostingView(rootView:DesktopControlCard(model:model,onHide:{ [weak self] in self?.hide() },onPin:{ [weak self] value in self?.setPinned(value) },pinned:pinned))
             panel = window
         }
-        updateLevel(); panel?.orderFrontRegardless()
+        panel?.title = L("Desktop controls")
+        presenting = foreground
+        updateLevel()
+        if foreground { NSApp.activate(); panel?.makeKeyAndOrderFront(nil) }
+        else { panel?.orderFrontRegardless() }
         UserDefaults.standard.set(true,forKey:"desktopCard.visible")
     }
-    func hide() { panel?.orderOut(nil); UserDefaults.standard.set(false,forKey:"desktopCard.visible") }
+    func hide() { presenting = false; panel?.orderOut(nil); updateLevel(); UserDefaults.standard.set(false,forKey:"desktopCard.visible") }
     func windowShouldClose(_ sender:NSWindow)->Bool { hide(); return false }
-    private func setPinned(_ value:Bool) { pinned = value; UserDefaults.standard.set(value,forKey:"desktopCard.pinned"); updateLevel() }
-    private func updateLevel() { panel?.level = pinned ? .floating:NSWindow.Level(rawValue:Int(CGWindowLevelForKey(.desktopIconWindow))+1) }
+    func windowDidResignKey(_ notification:Notification) { presenting = false; updateLevel() }
+    private func setPinned(_ value:Bool) { presenting = false; pinned = value; UserDefaults.standard.set(value,forKey:"desktopCard.pinned"); updateLevel() }
+    private func updateLevel() { panel?.level = (pinned || presenting) ? .floating:NSWindow.Level(rawValue:Int(CGWindowLevelForKey(.desktopIconWindow))+1) }
     func validate(to directory:String) async {
         let folder = URL(fileURLWithPath:directory,isDirectory:true)
         try? FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
@@ -60,6 +73,10 @@ import AppKit
         }
         setPinned(true); lines.append(panel?.level == .floating ? "PASS pin above windows":"FAIL pin above windows")
         setPinned(false); lines.append(panel?.level.rawValue == Int(CGWindowLevelForKey(.desktopIconWindow))+1 ? "PASS desktop level":"FAIL desktop level")
+        show(foreground:true)
+        lines.append(panel?.level == .floating && !pinned ? "PASS explicit opening is visible without changing pin preference":"FAIL foreground presentation")
+        windowDidResignKey(Notification(name:NSWindow.didResignKeyNotification))
+        lines.append(panel?.level.rawValue == Int(CGWindowLevelForKey(.desktopIconWindow))+1 ? "PASS unpinned card returns to desktop after focus leaves":"FAIL presentation recovery")
         hide(); lines.append(panel?.isVisible == false ? "PASS hide":"FAIL hide")
         show(); lines.append(panel?.isVisible == true ? "PASS reopen":"FAIL reopen")
         try? lines.joined(separator:"\n").write(to:folder.appendingPathComponent("Desktop-UI.txt"),atomically:true,encoding:.utf8)
@@ -116,20 +133,8 @@ struct DesktopControlCard: View {
 struct SoundTuningCard: View {
     @ObservedObject var model:DeskModel
     var body:some View {
-        DeskCard(title:"SOUND TUNING",icon:"slider.horizontal.3") {
-            Text(L("Warmth, Bass +, Clear voices and an editable eight-band EQ are available in M8 Studio Sound.")).font(.callout)
-            Button(L("Open sound presets & EQ")) {
-                NSWorkspace.shared.open(URL(fileURLWithPath:"/Applications/M8 Studio Sound.app"), configuration:NSWorkspace.OpenConfiguration()) { _,error in
-                    if error != nil { DispatchQueue.main.async { model.announce(L("Install M8 Studio Sound in Applications using build-sound.sh.")) } }
-                }
-            }.buttonStyle(.borderedProminent)
-            step("Compare at the same level","Use a familiar voice and music excerpt. Match perceived loudness before choosing; a louder preset can appear better.")
-            Text(L("Sound processing runs in a separate companion to preserve the working monitor-key permission. It supports stereo PCM, automatic headroom, peak protection and native bypass.")).font(.caption).foregroundStyle(.secondary)
-            Text(L("Presets are engineered starting points, not measured calibration of your speakers or room.")).font(.caption2).foregroundStyle(.secondary)
-            Text(L("Stereo PCM is not evidence of a Dolby Atmos playback path.")).font(.caption2).foregroundStyle(.secondary)
+        DeskCard(title:"SOUND STUDIO",icon:"waveform.path") {
+            SoundView(model:model.sound, embedded:true, accent:DeskStyle.brand)
         }
-    }
-    private func step(_ title:String,_ detail:String)->some View {
-        VStack(alignment:.leading,spacing:5) { Text(L(title)).font(.callout.weight(.semibold)); Text(L(detail)).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true) }
     }
 }

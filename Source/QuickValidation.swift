@@ -16,9 +16,9 @@ import SwiftUI
     var lines = ["Native NSPopover layout validation — controls, empty scenes, populated scenes", "No network connection or audio/display mutations are requested by this harness."]
     for (locale,style) in [("uk","Light"),("uk","Dark"),("en","Light"),("en","Dark")] {
         model.language = locale; model.appearance = style
-        for variant in ["controls","empty-scenes","favorite-scenes"] {
+        for variant in ["controls","sound","empty-scenes","favorite-scenes"] {
             model.scenes = variant == "favorite-scenes" ? fixtures:[]
-            controller.popover.contentViewController = NSHostingController(rootView:QuickStudioView(model:model,initialPage:variant == "controls" ? 0:1))
+            controller.popover.contentViewController = NSHostingController(rootView:QuickStudioView(model:model,initialPage:variant == "controls" ? 0:variant == "sound" ? 1:2))
             controller.showPopover()
             if !controller.popover.isShown {
                 await Task.yield(); controller.showPopover()
@@ -30,7 +30,7 @@ import SwiftUI
             if let view = controller.popover.contentViewController?.view {
                 view.layoutSubtreeIfNeeded()
                 let size = view.bounds.size
-                let valid = controller.popover.isShown && size.width >= 370 && size.width <= 390 && size.height >= 260 && size.height <= 700
+                let valid = controller.popover.isShown && size.width >= 390 && size.width <= 420 && size.height >= 260 && size.height <= 700
                 lines.append("\(valid ? "PASS":"FAIL") \(locale) \(style) \(variant): shown=\(controller.popover.isShown), size=\(Int(size.width))×\(Int(size.height))")
                 if let bitmap = view.bitmapImageRepForCachingDisplay(in:view.bounds) {
                     view.cacheDisplay(in:view.bounds,to:bitmap)

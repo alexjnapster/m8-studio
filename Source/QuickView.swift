@@ -5,6 +5,7 @@ import CoreAudio
 struct QuickStudioView: View {
     @ObservedObject var model: DeskModel
     @ViewState private var page = 0
+    @FocusState private var pageFocused: Bool
     var h: Hardware { model.hardware }; var r: SamsungRemote { model.remote }
     init(model: DeskModel, initialPage: Int = 0) { self.model = model; _page = ViewState(initialValue: initialPage) }
     var favorites: [DeskScene] { model.scenes.filter { $0.favorite && $0.displayUUID == h.current?.uuid } }
@@ -12,14 +13,23 @@ struct QuickStudioView: View {
         VStack(alignment:.leading,spacing:14) {
             header
             displaySummary
-            Picker(L("Quick view"),selection:$page) { Text(L("Controls")).tag(0); Text(L("Scenes")).tag(1) }.pickerStyle(.segmented).labelsHidden()
-            if page == 0 { controls } else { sceneList }
+            Picker(L("Quick view"),selection:$page) { Text(L("Controls")).tag(0); Text(L("Sound")).tag(1); Text(L("Scenes")).tag(2) }
+                .pickerStyle(.segmented).labelsHidden()
+                .focusable(interactions: .edit).focused($pageFocused)
+                .onMoveCommand { direction in
+                    if direction == .left { page = max(0,page-1) }
+                    else if direction == .right { page = min(2,page+1) }
+                }
+                .accessibilityIdentifier("quick.pages")
+            if page == 0 { controls } else if page == 1 { soundControls } else { sceneList }
             if h.rollbackSeconds > 0 { recovery }
             footer
         }
-        .padding(20).frame(width:380).background(DeskStyle.canvas).tint(DeskStyle.brand)
+        .padding(20).frame(width:400).background(DeskStyle.canvas).tint(DeskStyle.brand)
         .environment(\.locale,Locale(identifier:model.language))
         .preferredColorScheme(model.appearance == "Light" ? .light:model.appearance == "Dark" ? .dark:nil)
+        .defaultFocus($pageFocused, true, priority: .userInitiated)
+        .task { pageFocused = true }
     }
     var header: some View {
         HStack(spacing:8) {
@@ -67,6 +77,10 @@ struct QuickStudioView: View {
             }
             Text(L("Software dimming · 100% for color work")).font(.system(size:9)).foregroundStyle(.secondary)
             Divider().opacity(0.5)
+            scalingControl
+            if let display = h.current, model.canvasRecovery.pending.contains(display.uuid) {
+                Button(L("Review reconnect recovery")) { open(.display) }.font(.caption)
+            }
             audioOutput
             if let volume = r.volume, r.mediaAvailable, model.samsungIsOutput {
                 DeskSlider(title:r.muted ? "Muted":"Volume",icon:r.muted ? "speaker.slash.fill":"speaker.wave.2.fill",value:volume,range:0...100) { model.setVolume($0) }
@@ -91,6 +105,40 @@ struct QuickStudioView: View {
                     }.font(.system(size:10)).foregroundStyle(model.keyboard.mediaActive ? DeskStyle.brand:Color.secondary)
                 }.buttonStyle(.plain).padding(.vertical,2)
             }
+        }
+    }
+    var scalingControl: some View {
+        HStack(spacing:8) {
+            Image(systemName:"textformat.size").foregroundStyle(.secondary).frame(width:16)
+            Text(L("Desktop size")).font(.system(size:11))
+            Spacer(minLength:8)
+            Menu {
+                if model.virtualCanvas.engaged {
+                    if model.virtualCanvas.state == .preview { Button(L("Keep virtual canvas")) { model.virtualCanvas.keep() } }
+                    Button(L("Return to physical display")) { model.virtualCanvas.stop() }
+                }
+                ForEach(model.quickDisplayModes,id:\.ioDisplayModeID) { mode in
+                    Button { model.applyMode(mode) } label: {
+                        Label(modeLabel(mode),systemImage:mode.ioDisplayModeID == h.current?.mode?.ioDisplayModeID ? "checkmark":model.modeIsFavorite(mode) ? "star":"display")
+                    }.disabled(model.virtualCanvas.engaged || h.rollbackSeconds > 0 || mode.ioDisplayModeID == h.current?.mode?.ioDisplayModeID)
+                }
+                Divider()
+                Button(L("All modes & favorites…")) { open(.display) }
+            } label: {
+                Text(model.virtualCanvas.engaged ? "\(model.virtualCanvas.logicalWidth) × \(model.virtualCanvas.logicalWidth*9/16) HiDPI" : (h.current?.mode.map { "\($0.width) × \($0.height)" } ?? L("Mode unavailable")))
+                    .font(.system(size:10)).monospacedDigit()
+            }.menuStyle(.borderlessButton).fixedSize(horizontal:false,vertical:true)
+            .accessibilityLabel(L("Desktop size · timed preview"))
+        }
+    }
+    var soundControls: some View {
+        VStack(alignment:.leading,spacing:12) {
+            audioOutput
+            if let volume = r.volume, r.mediaAvailable, model.samsungIsOutput {
+                DeskSlider(title:r.muted ? "Muted":"Volume",icon:r.muted ? "speaker.slash.fill":"speaker.wave.2.fill",value:volume,range:0...100) { model.setVolume($0) }
+                Button(L(r.muted ? "Unmute":"Mute")) { model.handle(.mute) }.controlSize(.small)
+            }
+            IntegratedSoundQuickView(sound:model.sound) { open(.sound) }
         }
     }
     var audioOutput: some View {
@@ -141,7 +189,9 @@ struct QuickStudioView: View {
     }
     var footer: some View {
         HStack {
-            Button(L("Open Studio")) { model.onOpenStudio?() }.buttonStyle(.borderedProminent).controlSize(.small)
+            Button(L("Open Studio")) { model.onOpenStudio?() }
+                .buttonStyle(.borderedProminent).controlSize(.small)
+                .keyboardShortcut(.return, modifiers: .command).help(L("Open Studio") + " (⌘↩)")
             Spacer()
             Button { model.restore() } label: { Image(systemName:"arrow.counterclockwise").frame(width:26,height:26) }.buttonStyle(.plain).help(L("Restore all screens")).accessibilityLabel(L("Restore all screens"))
             Menu {
@@ -163,7 +213,10 @@ struct QuickStudioView: View {
     init(model:DeskModel) {
         self.model = model; super.init()
         if let button = item.button { button.image = NSImage(systemSymbolName:"display",accessibilityDescription:"M8 Studio"); button.toolTip = L("M8 Studio · click for controls · right-click for quick actions"); button.target = self; button.action = #selector(clicked); button.sendAction(on:[.leftMouseUp,.rightMouseUp]) }
-        popover.behavior = .transient; popover.contentViewController = NSHostingController(rootView:QuickStudioView(model:model))
+        popover.behavior = .transient
+        let hosting = NSHostingController(rootView:QuickStudioView(model:model))
+        hosting.sizingOptions = [.preferredContentSize]
+        popover.contentViewController = hosting
         scrollObserver = NSEvent.addLocalMonitorForEvents(matching:.scrollWheel) { [weak self] event in
             guard let self, let button = self.item.button, event.window === button.window, event.modifierFlags.contains(.option), button.bounds.contains(button.convert(event.locationInWindow,from:nil)) else { return event }
             if abs(event.scrollingDeltaY) > 0 { self.model.handle(event.scrollingDeltaY > 0 ? .brighter:.dimmer,fine:true) }
@@ -171,12 +224,21 @@ struct QuickStudioView: View {
         }
     }
     @objc func clicked() {
-        model.hardware.refresh(); model.keyboard.refreshPermission()
         guard let button = item.button else { return }
-        if let event = NSApp.currentEvent, event.type == .rightMouseUp { popover.performClose(nil); NSMenu.popUpContextMenu(quickMenu(),with:event,for:button); return }
-        if popover.isShown { popover.performClose(nil) } else { popover.show(relativeTo:button.bounds,of:button,preferredEdge:.minY); popover.contentViewController?.view.window?.makeKey() }
+        if let event = NSApp.currentEvent, event.type == .rightMouseUp {
+            model.hardware.refresh(); model.keyboard.refreshPermission()
+            popover.performClose(nil); NSMenu.popUpContextMenu(quickMenu(),with:event,for:button); return
+        }
+        if popover.isShown { popover.performClose(nil) } else { showPopover() }
     }
-    func showPopover() { NSApp.activate(); model.hardware.refresh(); model.keyboard.refreshPermission(); guard let button = item.button else { return }; popover.show(relativeTo:button.bounds,of:button,preferredEdge:.minY); popover.contentViewController?.view.window?.makeKey() }
+    func showPopover() {
+        NSApp.activate(); model.sound.refreshRoute(); model.hardware.refresh(); model.keyboard.refreshPermission()
+        guard let button = item.button else { return }
+        popover.show(relativeTo:button.bounds,of:button,preferredEdge:.minY)
+        if let view = popover.contentViewController?.view, let window = view.window {
+            window.makeKey(); window.recalculateKeyViewLoop(); window.makeFirstResponder(view)
+        }
+    }
     func closePopover() { popover.performClose(nil) }
     private func entry(_ title:String,action:Selector,tag:Int = 0)->NSMenuItem { let entry = NSMenuItem(title:L(title),action:action,keyEquivalent:""); entry.target = self; entry.tag = tag; return entry }
     func quickMenu()->NSMenu {
@@ -196,10 +258,26 @@ struct QuickStudioView: View {
             let volume = NSMenuItem(title:L("Speaker volume"),action:nil,keyEquivalent:""); let choices = NSMenu()
             for value in [0,5,10,15,20,30,50] { choices.addItem(entry("\(value)%",action:#selector(volumeAction(_:)),tag:value)) }; volume.submenu = choices; menu.addItem(volume); menu.addItem(entry(model.remote.muted ? "Unmute":"Mute",action:#selector(mute)))
         }
+        let sound = NSMenuItem(title:L("Sound"),action:nil,keyEquivalent:"")
+        let presets = NSMenu(); presets.autoenablesItems = false
+        for (index,preset) in SoundPreset.all.enumerated() {
+            let option = entry(model.sound.english ? preset.en:preset.uk,action:#selector(presetAction(_:)),tag:index)
+            option.state = model.sound.selectedPreset == preset.id ? .on:.off
+            option.isEnabled = !model.sound.busy; presets.addItem(option)
+        }
+        presets.addItem(.separator())
+        let toggle = entry(model.sound.canBypass ? "Bypass EQ":"Enable EQ",action:#selector(toggleEQ))
+        toggle.isEnabled = model.sound.canBypass || (!model.sound.busy && model.sound.eligible)
+        presets.addItem(toggle); sound.submenu = presets; menu.addItem(sound)
         let favorites = model.scenes.filter { $0.favorite && $0.displayUUID == model.hardware.current?.uuid }
         if !favorites.isEmpty { menu.addItem(.separator()); for (index,scene) in model.scenes.enumerated() where scene.favorite && scene.displayUUID == model.hardware.current?.uuid { menu.addItem(entry(LF("Preview %@…",[scene.localizedName]),action:#selector(sceneAction(_:)),tag:index)) } }
         menu.addItem(.separator()); menu.addItem(entry("Identify screens",action:#selector(identify))); menu.addItem(entry("Restore all screens",action:#selector(restore))); menu.addItem(.separator()); menu.addItem(entry("Quit M8 Studio",action:#selector(quit))); return menu
     }
+    @objc private func presetAction(_ sender:NSMenuItem) {
+        guard !model.sound.busy, SoundPreset.all.indices.contains(sender.tag) else { return }
+        model.sound.choose(SoundPreset.all[sender.tag]); if model.sound.running { model.sound.apply() }
+    }
+    @objc private func toggleEQ() { if model.sound.canBypass { model.sound.stop() } else { model.sound.apply() } }
     @objc private func screenAction(_ sender:NSMenuItem) { model.selectDisplay(CGDirectDisplayID(sender.tag)) }
     @objc private func outputAction(_ sender:NSMenuItem) { model.hardware.setOutput(AudioDeviceID(sender.tag)) }
     @objc private func desktopCard() { model.onToggleDesktopCard?() }

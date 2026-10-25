@@ -27,8 +27,6 @@ struct GuidedSetup: View {
     @ObservedObject var model: DeskModel
     var h: Hardware { model.hardware }
     private var stage: SetupStage { model.setupStage }
-    private let soundURL = URL(fileURLWithPath:"/Applications/M8 Studio Sound.app")
-    private var soundInstalled: Bool { FileManager.default.fileExists(atPath:soundURL.path) }
     var body: some View {
         VStack(alignment:.leading,spacing:20) {
             HStack {
@@ -126,12 +124,8 @@ struct GuidedSetup: View {
                 }
             }
             Divider()
-            Text(L("For fuller sound, try Bass + or Warmth in the separate sound module. Compare with bypass at the same perceived loudness.")).font(.callout)
-            if soundInstalled {
-                Button(L("Open sound presets & EQ")) { NSWorkspace.shared.open(soundURL) }
-            } else {
-                Link(L("Get the sound module"),destination:URL(string:"https://github.com/alexjnapster/m8-studio/releases/tag/sound-v0.1.0-beta.1")!)
-            }
+            Text(L("For fuller sound, try Bass + or Warmth in Sound Studio. Compare with bypass at the same perceived loudness.")).font(.callout)
+            Button(L("Open sound presets & EQ")) { model.section = .sound }
             Text(L("EQ processes stereo PCM. It does not enable Atmos or replace measured speaker calibration.")).font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -159,7 +153,7 @@ struct GuidedSetup: View {
             row("Current profile",model.colors.currentName)
             row("Sound output",h.audio.first(where:{$0.id == h.output})?.name ?? L("No sound output"))
             row("Media keys",L(model.keyboard.mediaActive ? "Media keys are active":"Media keys are disabled"))
-            row("Sound module",L(soundInstalled ? "Installed":"Not installed"))
+            row("Sound Studio",L("Built in"))
             Divider()
             Text(L("Keep a favorite setup as a scene, or keep exploring. Finishing does not apply a picture mode, profile, preset or audio route.")).font(.callout)
             HStack {
@@ -170,6 +164,6 @@ struct GuidedSetup: View {
         }
     }
     private func row(_ title:String,_ value:String)->some View {
-        HStack(alignment:.firstTextBaseline,spacing:18) { Text(L(title)).foregroundStyle(.secondary); Spacer(minLength:12); Text(value).multilineTextAlignment(.trailing).textSelection(.enabled) }.font(.callout).accessibilityElement(children:.combine)
+        HStack(alignment:.firstTextBaseline,spacing:18) { Text(L(title)).foregroundStyle(.secondary); Spacer(minLength:12); Text(value).multilineTextAlignment(.trailing).textSelection(.enabled) }.font(.callout).accessibilityElement(children:.ignore).accessibilityLabel(L(title)).accessibilityValue(value)
     }
 }

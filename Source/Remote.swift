@@ -151,6 +151,9 @@ final class MonitorTrust: NSObject, URLSessionDelegate {
         connected = false; busy = false; status = "Disconnected"
     }
     func connect(remoteControl:Bool = true) {
+        #if M8_UI_PREVIEW
+        return // Covers explicit actions as well as reconnect notifications.
+        #endif
         let address = host.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard localHost(address) else { status = "Enter a private IPv4 address or a .local/.lan hostname."; return }
         disconnect(); wantsConnection = true; wantsRemoteControl = remoteControl; host = address; let stamp = generation; busy = true; status = "Checking monitor…"

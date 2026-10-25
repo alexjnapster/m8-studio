@@ -64,6 +64,13 @@ struct StudioView: View {
             sidebar
             VStack(spacing:0) {
                 header
+                #if M8_UI_PREVIEW
+                #if M8_SOUND_HARDWARE_TEST || M8_CANVAS_HARDWARE_TEST
+                Text(L("Live hardware test · separate app settings")).font(.caption.bold()).foregroundStyle(.orange).padding(.vertical,5)
+                #else
+                Text(L("Interface preview · simulated processing")).font(.caption).foregroundStyle(.secondary).padding(.vertical,5)
+                #endif
+                #endif
                 if h.rollbackSeconds > 0 { rollback }
                 ScrollView {
                     VStack(alignment:.leading,spacing:20) {
@@ -170,10 +177,12 @@ struct StudioView: View {
                 Text(L(model.isM8 ? "HiDPI renders more pixels for sharper text. The rendering buffer and the physical panel are separate. Your M8 panel remains 3840 × 2160 at up to 60 Hz." : "Choose from the modes reported by this display. HiDPI improves text rendering; available refresh rates depend on the display and connection.")).font(.caption).foregroundStyle(.secondary)
                 Menu(L(model.isM8 ? "More 60 Hz modes" : "All display modes")) { ForEach(model.activeModes,id:\.ioDisplayModeID) { mode in Button(L(modeLabel(mode))) { model.applyMode(mode) } } }.disabled(h.rollbackSeconds > 0)
             }
+            if model.showsAdvancedCanvas { VirtualCanvasView(model:model,canvas:model.virtualCanvas) }
             ScalingInspector(model:model)
+            DisplayToolsView(model:model)
             DeskCard(title:"YOUR SCREENS",icon:"rectangle.on.rectangle") {
                 HStack(spacing:15) { ForEach(Array(h.displays.enumerated()),id:\.element.id) { i,display in Button { model.selectDisplay(display.id) } label: { VStack(spacing:10) { Image(systemName:display.builtIn ? "laptopcomputer":"display").font(.system(size:36,weight:.light)); Text(LF("%@ · %@",[String(describing:i+1),String(describing:display.id == h.selected ? model.displayName:display.name)])).font(.caption); if CGMainDisplayID() == display.id { Text(L("Main screen")).font(.caption2).foregroundStyle(.secondary) } }.foregroundStyle(display.id == h.selected ? DeskStyle.brand:.secondary).frame(maxWidth:.infinity).padding(20).background(display.id == h.selected ? DeskStyle.brand.opacity(0.08):Color.primary.opacity(0.025),in:RoundedRectangle(cornerRadius:15)) }.buttonStyle(.plain) } }
-                HStack { Button(L("Identify screens")) { model.identify() }; Button(L("Make main screen")) { h.setMain(); model.announce(h.notice) }; Spacer(); Button(L("Arrange in macOS")) { openSettings("com.apple.Displays-Settings.extension") } }
+                HStack { Button(L("Identify screens")) { model.identify() }; Button(L("Make main screen")) { h.setMain(); model.announce(h.notice) }.disabled(model.virtualCanvas.engaged); Spacer(); Button(L("Arrange in macOS")) { openSettings("com.apple.Displays-Settings.extension") } }
             }
             brightnessCard
             if h.current?.builtIn == false && (!model.isM8 || !h.ddc.isEmpty) {
@@ -193,7 +202,7 @@ struct StudioView: View {
     }
     func viewChoice(_ title:String,_ detail:String,width:Int,hiDPI:Bool,icon:String)->some View {
         Group { if let mode = model.mode(width,hiDPI:hiDPI) {
-            Button { model.applyMode(mode) } label: { VStack(alignment:.leading,spacing:10) { Image(systemName:icon).font(.system(size:24,weight:.light)); Text(L(title)).font(.system(size:13,weight:.semibold)); Text(L(detail)).font(.system(size:10)).foregroundStyle(.secondary); Text(LF("%@ wide · %@",[String(describing:width),String(describing:hiDPI ? "HiDPI":"1×")])).font(.system(size:9,design:.monospaced)).foregroundStyle(DeskStyle.brand) }.frame(maxWidth:.infinity,alignment:.leading).padding(18).background(h.current?.mode?.ioDisplayModeID == mode.ioDisplayModeID ? DeskStyle.brand.opacity(0.12):Color.primary.opacity(0.03),in:RoundedRectangle(cornerRadius:17)) }.buttonStyle(.plain).disabled(h.rollbackSeconds > 0)
+            Button { model.applyMode(mode) } label: { VStack(alignment:.leading,spacing:10) { Image(systemName:icon).font(.system(size:24,weight:.light)); Text(L(title)).font(.system(size:13,weight:.semibold)); Text(L(detail)).font(.system(size:10)).foregroundStyle(.secondary); Text(LF("%@ wide · %@",[String(describing:width),String(describing:hiDPI ? "HiDPI":"1×")])).font(.system(size:9,design:.monospaced)).foregroundStyle(DeskStyle.brand) }.frame(maxWidth:.infinity,alignment:.leading).padding(18).background(h.current?.mode?.ioDisplayModeID == mode.ioDisplayModeID ? DeskStyle.brand.opacity(0.12):Color.primary.opacity(0.03),in:RoundedRectangle(cornerRadius:17)) }.buttonStyle(.plain).disabled(model.virtualCanvas.engaged || h.rollbackSeconds > 0)
         } }
     }
     var colorPage: some View {
@@ -201,10 +210,10 @@ struct StudioView: View {
             HStack(spacing:18) { VStack(alignment:.leading,spacing:9) { Text(L("Color you can trust.")).font(.system(size:27,weight:.semibold,design:.rounded)); Text(LF("Current profile: %@",[String(describing:model.colors.currentName)])).font(.callout).foregroundStyle(.secondary); Text(L("Preserve the profile that describes this display. A measured ICC profile can refine it; a wider gamut label cannot create new panel colors.")).font(.caption).foregroundStyle(.secondary) }; Spacer(); Circle().fill(AngularGradient(colors:[.red,.yellow,.green,.cyan,.blue,.purple,.red],center:.center)).frame(width:105,height:105).overlay(Circle().fill(DeskStyle.canvas).padding(20)) }.padding(23).background(DeskStyle.brand.opacity(0.07),in:RoundedRectangle(cornerRadius:23))
             DeskCard(title:"PROFILE LIBRARY",icon:"paintpalette") {
                 ForEach(model.colors.profiles) { profile in
-                    HStack(spacing:14) { Image(systemName:profile.id == "srgb" ? "globe":"display").font(.title3).foregroundStyle(DeskStyle.brand).frame(width:32); VStack(alignment:.leading,spacing:4) { Text(L(profile.name)).font(.system(size:13,weight:.medium)); Text(L(profile.detail)).font(.system(size:10)).foregroundStyle(.secondary) }; Spacer(); if model.colors.currentURL?.standardizedFileURL == profile.url.standardizedFileURL { Image(systemName:"checkmark.circle.fill").foregroundStyle(DeskStyle.brand) } else { Button(L("Preview")) { pendingProfile = profile }.controlSize(.small) } }
+                    HStack(spacing:14) { Image(systemName:profile.id == "srgb" ? "globe":"display").font(.title3).foregroundStyle(DeskStyle.brand).frame(width:32); VStack(alignment:.leading,spacing:4) { Text(L(profile.name)).font(.system(size:13,weight:.medium)); Text(L(profile.detail)).font(.system(size:10)).foregroundStyle(.secondary) }; Spacer(); if model.colors.currentURL?.standardizedFileURL == profile.url.standardizedFileURL { Image(systemName:"checkmark.circle.fill").foregroundStyle(DeskStyle.brand) } else { Button(L("Preview")) { pendingProfile = profile }.controlSize(.small).disabled(model.virtualCanvas.engaged) } }
                     if profile.id != model.colors.profiles.last?.id { Divider().opacity(0.5) }
                 }
-                HStack { Button(L("Import measured ICC…")) { model.colors.importProfile() }; if model.colors.canUndo { Button(L("Undo profile change")) { model.colors.undo() } }; Spacer(); Button(L("ColorSync Utility")) { NSWorkspace.shared.open(URL(fileURLWithPath:"/System/Applications/Utilities/ColorSync Utility.app")) } }
+                HStack { Button(L("Import measured ICC…")) { model.colors.importProfile() }.disabled(model.virtualCanvas.engaged); if model.colors.canUndo { Button(L("Undo profile change")) { model.colors.undo() }.disabled(model.virtualCanvas.engaged) }; Spacer(); Button(L("ColorSync Utility")) { NSWorkspace.shared.open(URL(fileURLWithPath:"/System/Applications/Utilities/ColorSync Utility.app")) } }
                 if !model.colors.status.isEmpty { Text(L(model.colors.status)).font(.caption).foregroundStyle(.secondary) }
             }
             pictureTests
@@ -222,6 +231,7 @@ struct StudioView: View {
     }
     var soundPage: some View {
         Group {
+            SoundTuningCard(model:model)
             HStack(alignment:.top,spacing:16) { volumeCard; DeskCard(title:"SOUND GOES HERE",icon:"arrow.triangle.branch") { Picker(L("Sound output"),selection:Binding(get:{h.output},set:{h.setOutput($0);model.announce(h.notice)})) { ForEach(h.audio) { Text(L($0.name)).tag($0.id) } }.labelsHidden(); if let device = h.audio.first(where:{$0.id == h.output}) { Text(LF("%@-channel · %@ kHz",[String(describing:device.channels),String(describing:Int(device.rate/1000))])).font(.system(size:21,weight:.medium,design:.rounded)); Text(L("Live format reported by Core Audio.")).font(.system(size:10)).foregroundStyle(.secondary) }; Button(L("Audio MIDI Setup")) { NSWorkspace.shared.open(URL(fileURLWithPath:"/System/Applications/Utilities/Audio MIDI Setup.app")) } } }
             if !model.samsungAudioCandidates.isEmpty {
                 DeskCard(title:"THIS MONITOR’S SPEAKERS",icon:"speaker.wave.2.circle") {
@@ -239,7 +249,6 @@ struct StudioView: View {
                 Text(L("The Control–Option–Command shortcuts work without Accessibility access. Mac media-key interception requires macOS approval.")).font(.caption2).foregroundStyle(.secondary)
             }
             SpatialPlaybackCard(model:model)
-            SoundTuningCard(model:model)
             DeskCard(title:"CHECK YOUR SPEAKERS",icon:"ear") {
                 HStack { Button(L("Left speaker")) { TonePlayer.shared.play(channel:0); model.announce("Playing a short, low-level left-channel tone") }; Button(L("Right speaker")) { TonePlayer.shared.play(channel:1); model.announce("Playing a short, low-level right-channel tone") }; Spacer(); Image(systemName:"waveform").foregroundStyle(DeskStyle.brand) }
                 Text(L("For everyday listening, compare Standard and Adaptive Sound+ in the monitor’s Sound settings. Keep listening level comfortable; extra sample rate or aggressive bass boost is not proof of better sound.")).font(.caption).foregroundStyle(.secondary)
@@ -305,7 +314,7 @@ struct StudioView: View {
     }
     func commandTitle(_ command:DeskCommand)->String { switch command { case .volumeUp:return "Volume up"; case .volumeDown:return "Volume down"; case .mute:return "Mute / unmute"; case .brighter:return "Brighter"; case .dimmer:return "Dimmer"; case .restore:return "Restore screens"; case .openStudio:return "Open Studio" } }
     func scenePreview(_ scene:DeskScene)->some View { VStack(alignment:.leading,spacing:18) { Image(systemName:scene.icon).font(.largeTitle).foregroundStyle(DeskStyle.brand); Text(scene.localizedName).font(.system(size:27,weight:.semibold,design:.rounded)); Text(LF("%@\nBrightness %@%%@",[String(describing:scene.mode?.label ?? L("Keep current view")),String(describing:Int(scene.brightness*100)),String(describing:scene.volume.map { "\n"+LF("Monitor volume %@%",[String(Int($0))]) } ?? "\n"+L("Keep current volume"))])).font(.callout).lineSpacing(8); Text(L("Display mode changes have 15-second recovery. Your color profile is preserved.")).font(.caption).foregroundStyle(.secondary); if let issue = model.sceneIssue(scene) { Text(L(issue)).font(.caption).foregroundStyle(.orange) }; HStack { Button(L("Cancel")) { model.pendingScene = nil }; Spacer(); Button(L("Apply scene")) { model.applyScene(scene) }.buttonStyle(.borderedProminent).disabled(model.sceneIssue(scene) != nil) } }.padding(30).frame(width:420) }
-    func profilePreview(_ profile:DisplayProfile)->some View { VStack(alignment:.leading,spacing:18) { Image(systemName:"paintpalette").font(.largeTitle).foregroundStyle(DeskStyle.brand); Text(L(profile.name)).font(.title2).fontWeight(.semibold); Text(L(profile.detail)).font(.callout); Text(L("This changes how macOS converts color for the selected screen. Match the profile to the panel’s actual picture settings. A generic profile cannot establish measured accuracy; you can undo the change.")).font(.caption).foregroundStyle(.secondary); HStack { Button(L("Cancel")) { pendingProfile = nil }; Spacer(); Button(L("Apply profile")) { _ = model.colors.apply(profile); model.announce(model.colors.status); pendingProfile = nil }.buttonStyle(.borderedProminent) } }.padding(30).frame(width:440) }
+    func profilePreview(_ profile:DisplayProfile)->some View { VStack(alignment:.leading,spacing:18) { Image(systemName:"paintpalette").font(.largeTitle).foregroundStyle(DeskStyle.brand); Text(L(profile.name)).font(.title2).fontWeight(.semibold); Text(L(profile.detail)).font(.callout); Text(L("This changes how macOS converts color for the selected screen. Match the profile to the panel’s actual picture settings. A generic profile cannot establish measured accuracy; you can undo the change.")).font(.caption).foregroundStyle(.secondary); HStack { Button(L("Cancel")) { pendingProfile = nil }; Spacer(); Button(L("Apply profile")) { guard !model.virtualCanvas.engaged else { return }; _ = model.colors.apply(profile); model.announce(model.colors.status); pendingProfile = nil }.buttonStyle(.borderedProminent).disabled(model.virtualCanvas.engaged) } }.padding(30).frame(width:440) }
     func guide() { if let url = Bundle.main.url(forResource:"User Guide",withExtension:"html",subdirectory:model.language+".lproj") ?? Bundle.main.url(forResource:"User Guide",withExtension:"html") { NSWorkspace.shared.open(url) } }
     func exportDiagnostics() { let panel = NSSavePanel(); panel.nameFieldStringValue = "M8 Studio Diagnostics.txt"; if panel.runModal() == .OK, let url = panel.url { do { try (h.diagnostics()+"\nRemote connected: \(r.connected)\nVolume service ready: \(r.mediaAvailable)\nMonitor audio route active: \(model.samsungIsOutput)\nMedia keys active: \(model.keyboard.mediaActive)\nLast handled shortcut: \(model.keyboard.lastInput)\n").write(to:url,atomically:true,encoding:.utf8); model.announce("Diagnostics saved") } catch { model.announce("Could not save diagnostics") } } }
 }

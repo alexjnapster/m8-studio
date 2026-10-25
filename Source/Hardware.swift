@@ -89,6 +89,7 @@ private struct DisplaySnapshot: Equatable {
     private var displayStorage:[DisplayInfo] = []
     private var displaySnapshots:[DisplaySnapshot] = []
     var displays:[DisplayInfo] { displayStorage }
+    @Published private(set) var connectedUUIDs = Set<String>()
     @Published var selected: CGDirectDisplayID = 0
     @Published var audio: [AudioInfo] = []
     @Published var output: AudioDeviceID = 0
@@ -145,6 +146,8 @@ private struct DisplaySnapshot: Equatable {
         if snapshots != displaySnapshots { objectWillChange.send(); displaySnapshots = snapshots }
         // Keep NSScreen references fresh even when observable values are unchanged.
         displayStorage = freshDisplays
+        let freshUUIDs = Set(freshDisplays.map(\.uuid))
+        if freshUUIDs != connectedUUIDs { connectedUUIDs = freshUUIDs }
         if !hadExternal, current?.builtIn != false, let attached = displays.first(where: { !$0.builtIn }) { selected = attached.id; ddc = [:]; ddcMax = [:] }
         if !displays.contains(where: { $0.id == selected }) { selected = displays.first(where: { !$0.builtIn })?.id ?? displays.first?.id ?? 0; ddc = [:] }
         for id in Array(shades.keys) where !displays.contains(where: { $0.id == id }) { shades.removeValue(forKey: id)?.close(); shadeTargets.removeValue(forKey:id) }
