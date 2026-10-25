@@ -19,6 +19,22 @@ jobs:
         run: zsh Tests/test-carbon.sh
       - name: Sound DSP numerical checks
         run: python3 Tests/test-sound.py
+      - name: Audio buffer memory checks
+        run: zsh Tests/test-audio-buffers.sh
+      - name: Sound lifecycle recovery checks
+        run: zsh Tests/test-sound-lifecycle.sh
+      - name: Integrated sound model and migration
+        run: zsh Tests/test-sound-model.sh
+      - name: Favorite display modes
+        run: zsh Tests/test-mode-favorites.sh
+      - name: Display assistance and virtual canvas validation
+        run: |
+          zsh Tests/test-display-assistance.sh
+          zsh Tests/test-virtual-canvas.sh
+      - name: Navigation route boundaries
+        run: zsh Tests/test-studio-routes.sh
+      - name: Build sandboxed widget prototype
+        run: zsh build-widget-preview.sh
       - name: Build sound companion
         run: zsh build-sound.sh
       - name: Build Apple silicon app
