@@ -2,7 +2,8 @@
 
 This is the local delivery procedure for the user's accepted ad-hoc builds.
 It does not install an update, reset permissions or imply that v5 is complete.
-The public GitHub update follows the local v5 E2E gate.
+The user authorized a development source update and downloadable DMG preview.
+These are not completion of the local v5 E2E or installed permission gates.
 
 ## Baseline evidence collected 2026-10-24
 
