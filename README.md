@@ -4,6 +4,18 @@
 
 A native SwiftUI/AppKit menu-bar utility for Samsung displays. Built for Apple silicon and macOS 14.2 or later. The published beta is 2.1.0. Current working source targets the v5 roadmap and is a development build, signed locally without Developer ID notarization.
 
+## Download the DMG
+
+[Download M8 Studio v5 development preview for Apple silicon](https://github.com/alexjnapster/m8-studio/releases/tag/v5-development-2026-10-26).
+Open the DMG, quit the old utilities, drag **M8 Studio.app** to **Applications**,
+then open it from Applications. Ukrainian/English installation instructions and
+an Applications shortcut are inside the image. macOS 14.2+ is required.
+
+This is a development preview (internal bundle 3.0.0, build 5), not completed v5.
+It is ad-hoc signed, not Apple-notarized; macOS may block first launch or require
+renewed approval for media keys/system audio. Keep your previous app when updating.
+No security settings are changed by the image. Check the release checksum.
+
 ## Latest development update — 2026-10-25
 
 The `v5-development` branch now includes integrated Sound Studio and quick-menu
