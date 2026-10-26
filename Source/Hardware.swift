@@ -17,17 +17,28 @@ struct DisplayInfo: Identifiable {
     var modes: [CGDisplayMode] {
         let all = CGDisplayCopyAllDisplayModes(id, [kCGDisplayShowDuplicateLowResolutionModes: true] as CFDictionary) as? [CGDisplayMode] ?? []
         var seen = Set<String>()
-        return all.filter { $0.width >= 1280 && seen.insert(modeLabel($0)).inserted }.sorted { $0.width == $1.width ? $0.refreshRate > $1.refreshRate : $0.width > $1.width }
+        return all.filter { $0.width >= 640 && $0.height >= 480 && seen.insert("\($0.width)x\($0.height):\($0.pixelWidth)x\($0.pixelHeight):\(Int(($0.refreshRate*1000).rounded()))").inserted }.sorted { $0.width == $1.width ? $0.refreshRate > $1.refreshRate : $0.width > $1.width }
     }
 }
 func modeLabel(_ m: CGDisplayMode) -> String {
-    L("\(m.width) × \(m.height)\(m.pixelWidth > m.width ? " HiDPI" : "") · \(Int(m.refreshRate.rounded())) Hz")
+    LF("%@ × %@%@ · %@ Hz",[String(m.width),String(m.height),m.pixelWidth > m.width ? " HiDPI":"",refreshLabel(m.refreshRate)])
 }
 struct AudioInfo: Identifiable, Equatable {
     let id: AudioDeviceID
     let name: String
     let channels: Int
     let rate: Double
+    let uid: String
+    let manufacturer: String
+    let transport: UInt32
+    var isSamsungDisplay: Bool { !uid.isEmpty && samsungDisplayAudio(name:name,manufacturer:manufacturer,transport:transport) }
+}
+func audioString(_ id: AudioObjectID, _ selector: AudioObjectPropertySelector) -> String {
+    var address = AudioObjectPropertyAddress(mSelector:selector,mScope:kAudioObjectPropertyScopeGlobal,mElement:kAudioObjectPropertyElementMain)
+    var value: Unmanaged<CFString>?
+    var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+    guard AudioObjectGetPropertyData(id,&address,0,nil,&size,&value) == noErr else { return "" }
+    return value?.takeRetainedValue() as String? ?? ""
 }
 func property<T>(_ id: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal, fallback: T) -> T {
     var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
@@ -51,11 +62,7 @@ func audioDevices() -> [AudioInfo] {
         guard AudioObjectGetPropertyData(id, &cfg, 0, nil, &n, p) == noErr else { return nil }
         let count = UnsafeMutableAudioBufferListPointer(p.assumingMemoryBound(to: AudioBufferList.self)).reduce(0) { $0 + Int($1.mNumberChannels) }
         guard count > 0 else { return nil }
-        var name: Unmanaged<CFString>?
-        var na = AudioObjectPropertyAddress(mSelector: kAudioObjectPropertyName, mScope: kAudioObjectPropertyScopeGlobal, mElement: 0)
-        var ns = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
-        _ = AudioObjectGetPropertyData(id, &na, 0, nil, &ns, &name)
-        return AudioInfo(id: id, name: name?.takeRetainedValue() as String? ?? "Audio output", channels: count, rate: property(id, kAudioDevicePropertyNominalSampleRate, fallback: Double(0)))
+        return AudioInfo(id:id,name:audioString(id,kAudioObjectPropertyName),channels:count,rate:property(id,kAudioDevicePropertyNominalSampleRate,fallback:Double(0)),uid:audioString(id,kAudioDevicePropertyDeviceUID),manufacturer:audioString(id,kAudioObjectPropertyManufacturer),transport:property(id,kAudioDevicePropertyTransportType,fallback:UInt32(0)))
     }
 }
 func runTool(_ path: String, _ args: [String], timeout: Double = 5) -> (Int32, String) {
@@ -82,6 +89,7 @@ private struct DisplaySnapshot: Equatable {
     private var displayStorage:[DisplayInfo] = []
     private var displaySnapshots:[DisplaySnapshot] = []
     var displays:[DisplayInfo] { displayStorage }
+    @Published private(set) var connectedUUIDs = Set<String>()
     @Published var selected: CGDirectDisplayID = 0
     @Published var audio: [AudioInfo] = []
     @Published var output: AudioDeviceID = 0
@@ -138,6 +146,8 @@ private struct DisplaySnapshot: Equatable {
         if snapshots != displaySnapshots { objectWillChange.send(); displaySnapshots = snapshots }
         // Keep NSScreen references fresh even when observable values are unchanged.
         displayStorage = freshDisplays
+        let freshUUIDs = Set(freshDisplays.map(\.uuid))
+        if freshUUIDs != connectedUUIDs { connectedUUIDs = freshUUIDs }
         if !hadExternal, current?.builtIn != false, let attached = displays.first(where: { !$0.builtIn }) { selected = attached.id; ddc = [:]; ddcMax = [:] }
         if !displays.contains(where: { $0.id == selected }) { selected = displays.first(where: { !$0.builtIn })?.id ?? displays.first?.id ?? 0; ddc = [:] }
         for id in Array(shades.keys) where !displays.contains(where: { $0.id == id }) { shades.removeValue(forKey: id)?.close(); shadeTargets.removeValue(forKey:id) }
@@ -258,10 +268,12 @@ private struct DisplaySnapshot: Equatable {
         notice = result == .success ? "Main display updated for this session." : "Main display change failed."; refresh()
     }
     func diagnostics() -> String {
-        var lines = ["M8 Studio diagnostics", "Date: \(ISO8601DateFormatter().string(from: Date()))", "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)"]
-        for d in displays { lines.append("\(d.name): \(d.summary), UI \(d.mode.map(modeLabel) ?? "unknown"), profile \(d.screen?.colorSpace?.localizedName ?? "unknown"), EDR headroom \(d.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1)") }
-        for a in audio { lines.append("Audio \(a.name): \(a.channels) channels, \(Int(a.rate)) Hz\(a.id == output ? " [selected]" : "")") }
-        lines.append("DDC confirmed controls for selected display: \(ddc.keys.sorted().joined(separator: ", "))")
-        return lines.joined(separator: "\n")
+        var lines = ["M8 Studio shareable diagnostics", "Date: \(ISO8601DateFormatter().string(from:Date()))", "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)", "Device names, profile names/paths and persistent identities are omitted."]
+        for (index,d) in displays.enumerated() {
+            lines.append("Display \(index+1) [\(d.builtIn ? "built-in":"external")]: vendor \(CGDisplayVendorNumber(d.id)), model \(CGDisplayModelNumber(d.id)); \(d.summary); UI \(d.mode.map(modeLabel) ?? "unknown"); EDR headroom \(d.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1)")
+        }
+        for (index,a) in audio.enumerated() { lines.append("Audio output \(index+1): \(a.channels) channels, \(Int(a.rate)) Hz; transport \(a.transport); Samsung display route \(a.isSamsungDisplay)\(a.id == output ? " [selected]":"")") }
+        lines.append("DDC confirmed controls: \(ddc.keys.sorted().joined(separator:", "))")
+        return lines.joined(separator:"\n")
     }
 }

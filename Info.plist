@@ -22,11 +22,24 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.1.0</string>
+	<string>3.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>5</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Studio navigation</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>m8studio</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSMinimumSystemVersion</key>
-	<string>14.0</string>
+	<string>14.2</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -38,5 +51,7 @@
 	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Find and control your Samsung Smart Monitor on your local network.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>M8 Studio processes monitor audio locally for EQ and bass presets. Audio is never recorded or uploaded.</string>
 </dict>
 </plist>

@@ -1,1 +1,3 @@
 "NSLocalNetworkUsageDescription" = "Пошук і керування вашим Samsung Smart Monitor у локальній мережі.";
+
+"NSAudioCaptureUsageDescription" = "M8 Studio обробляє звук монітора локально для EQ та басових пресетів. Аудіо не записується та не передається.";

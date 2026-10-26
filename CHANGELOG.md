@@ -1,3 +1,63 @@
+## Unified scaling, audio and widget development — 2026-10-25
+
+- Integrate the sound engine and presets into Studio and the shared quick menu.
+- Add per-output balance, mono, attenuation trims and optional linked night compression.
+- Stop integrated capture when the legacy companion opens, including pending startup.
+- Prefer reported native HiDPI modes, with an explicit M80B virtual SDR fallback,
+  independent preview timeout, Keep/Return and parent-close recovery.
+- Add favourite modes, estimated text-size matching, provider status and explicit
+  saved mode/profile review on reconnection.
+- Package a sandbox-only navigation WidgetKit extension; production gallery and
+  controlled installed update acceptance remain open.
+- Record connected-M8 tests, 65 DSP and 63 model checks, and verified clean packages.
+  This development update does not declare full v5 completion or measured calibration.
+
+## Render-buffer checks — unreleased, 2026-10-24
+
+- Add 21 Address Sanitizer checks of actual audio-buffer helpers using synthetic
+  memory, including channel order, capacity bounds, silence and tap-input isolation.
+- Prepare a dedicated CI step. No production audio code or installed app changed;
+  native setup interaction still awaits an unlocked session.
+
+## Sound routing hardening — unreleased, 2026-10-24
+
+- Require HDMI/DisplayPort transport for sound EQ, sharing the main app's Samsung
+  audio policy. Samsung Bluetooth/USB headsets and wireless/unknown transports
+  can no longer qualify from their brand name alone.
+- Accept model/manufacturer-named Samsung display routes with valid stereo PCM,
+  a usable endpoint identity and finite positive sample rate.
+- Add 12 routing regressions; the combined policy suite now passes 87 checks.
+  Workspace sound build verifies; accepted installed binaries are preserved.
+
+## Guided setup development, 2026-10-23
+
+- Add a repeatable five-step UK/EN journey for displays, picture/color, sound,
+  keyboard and a live summary; fresh first launch opens Setup.
+- Preserve progress across language changes and allow skipped steps. Require
+  pending display preview recovery before completion.
+- Prevent diagnostic/UI validation runs from acquiring media keys or registering
+  global shortcuts. Preserve accepted installed apps.
+
+## Sound companion development, 2026-10-23
+
+- Add local stereo PCM processing with Warmth, Bass +, Clear voices and Flat EQ.
+- Add eight editable bands, automatic preamp headroom, sub-bass protection, linked
+  peak limiting and native bypass; stop processing on route change, sleep or quit.
+- Add Ukrainian/English sound UI and menu-bar actions; preserve main media-key build.
+- Verify 43 DSP checks and live M80B audio flow. User accepts Bass + as fuller and
+  less harsh. No measured acoustic calibration or Atmos rendering is claimed.
+
+# 3.0.0 development — foundation for the v5 goal, 2026-10-22
+
+- Redesign the menu with Controls/Scenes pages, direct output/display choices, readable empty states and native right-click actions.
+- Add a live desktop control card with hide/reopen, saved placement, desktop/floating levels, brightness, gated volume and mode recovery. This is an app-owned panel; native WidgetKit gallery support remains planned.
+- Inspect official M9/M80B driver payloads. Recognize both original M80B HDMI and USB-C identities and keep M9 variants separate.
+- Add a HiDPI scaling explorer showing logical/render dimensions. Preserve fractional refresh rates and legacy scene compatibility.
+- Bind imported ICC profiles to their selected panel and reject cross-panel application without mutating ColorSync.
+- Add sound-comparison guidance and an immersive-playback assistant. Record user-confirmed availability of a monitor Atmos menu separately from its unknown enabled state and Mac playback path.
+- Improve monitor-audio binding, media-key diagnostics, event-tap recovery, sleep/wake cancellation and shareable diagnostic privacy.
+- Validate 75 portable policies, native Carbon dispatch, 12 quick-menu layouts, 8 desktop layout/lifecycle checks, 10 quality/profile/scene-format checks and 23 connected-display scene/recovery checks. Physical media-key delivery and Atmos playback remain separate verification gates.
+
 # 2.1.0 — 2026-10-22
 
 - Recognize dedicated Apple brightness events and F14/F15, retain normal F1/F2 behavior, consume matching releases across output changes, and suppress repeated mute toggles.
